@@ -1,0 +1,2 @@
+../micro_ros_stm32cubemx_utils/extra_sources/microros_time.c:11:6:UTILS_NanosecondsToTimespec	48	static
+../micro_ros_stm32cubemx_utils/extra_sources/microros_time.c:31:5:clock_gettime	88	static

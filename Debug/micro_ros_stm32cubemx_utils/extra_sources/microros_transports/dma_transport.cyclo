@@ -1,0 +1,4 @@
+../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:22:6:cubemx_transport_open	1
+../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:28:6:cubemx_transport_close	1
+../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:34:8:cubemx_transport_write	5
+../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:50:8:cubemx_transport_read	21

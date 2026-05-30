@@ -1,0 +1,1 @@
+eval write_memory 0x24000000 32 [list 0x24080000 0x08001369]

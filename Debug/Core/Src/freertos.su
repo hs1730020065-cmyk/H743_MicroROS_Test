@@ -1,0 +1,4 @@
+../Core/Src/freertos.c:129:6:MX_FREERTOS_Init	8	static
+../Core/Src/freertos.c:171:6:StartDefaultTask	80	static
+../Core/Src/freertos.c:298:13:led_pd10_init	32	static
+../Core/Src/freertos.c:314:13:led_cmd_callback	24	static
