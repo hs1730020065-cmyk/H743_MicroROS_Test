@@ -1,0 +1,13 @@
+鍛ㄤ簩 2026/06/02 13:03:57.66 -q -ex "file Debug/H743_MicroROS_Test.elf" -ex "target remote localhost:3333" -ex "monitor reset halt" -ex "p g_sbus_frame_ok" -ex detach -ex quit
+鍛ㄤ簩 2026/06/02 13:04:12.48 -q -ex "file Debug/H743_MicroROS_Test.elf" -ex "target remote localhost:3333" -ex "monitor halt" -ex "p g_sbus_frame_ok" -ex "p g_sbus_control" -ex detach -ex quit
+鍛ㄤ簩 2026/06/02 13:04:42.10 --interpreter=mi2
+鍛ㄤ簩 2026/06/02 13:04:42.10 --interpreter=mi2
+2026/06/02/周二 13:07:01.20 --version
+2026/06/02/周二 13:07:01.29 --interpreter mi2 --nx
+2026/06/02/周二 13:07:01.51 --interpreter mi2 --nx
+鍛ㄤ簩 2026/06/02 13:10:15.87 -q -ex "set pagination off" -ex "file Debug/H743_MicroROS_Test.elf" -ex "target remote localhost:3333" -ex "monitor halt" -ex "print g_sbus_frame_ok" -ex "print g_sbus_failsafe" -ex "print g_sbus_estop_active" -ex "print g_sbus_data.ch[0]" -ex "print g_sbus_data.ch[1]" -ex "print g_sbus_control" -ex detach -ex quit
+鍛ㄤ簩 2026/06/02 13:10:56.25 -q -x .\tools\read_sbus.gdb
+鍛ㄤ簩 2026/06/02 13:11:28.06 -q -x .\tools\check_boot.gdb
+鍛ㄤ簩 2026/06/02 13:11:48.21 -q -x .\tools\reset_run.gdb
+鍛ㄤ簩 2026/06/02 13:11:52.79 -q -x .\tools\check_boot.gdb
+鍛ㄤ簩 2026/06/02 13:12:23.54 -q -x .\tools\run_flash_app.gdb

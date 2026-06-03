@@ -1,0 +1,5 @@
+../Core/Src/can_motor.c:16:6:CanMotor_Init	8	static
+../Core/Src/can_motor.c:29:19:CanMotor_SendRawSpeed	64	static
+../Core/Src/can_motor.c:56:19:CanMotor_Stop	8	static
+../Core/Src/can_motor.c:61:19:CanMotor_Forward	24	static
+../Core/Src/can_motor.c:77:19:CanMotor_Reverse	16	static

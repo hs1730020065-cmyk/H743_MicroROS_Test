@@ -1,0 +1,6 @@
+../Core/Src/atk_ms901m_uart.c:14:9:atk_ms901m_uart_rx_fifo_write	24	static
+../Core/Src/atk_ms901m_uart.c:32:10:atk_ms901m_uart_rx_fifo_read	24	static
+../Core/Src/atk_ms901m_uart.c:65:6:atk_ms901m_rx_fifo_flush	4	static
+../Core/Src/atk_ms901m_uart.c:70:6:atk_ms901m_uart_send	16	static
+../Core/Src/atk_ms901m_uart.c:75:6:atk_ms901m_uart_init	16	static
+../Core/Src/atk_ms901m_uart.c:115:6:ATK_MS901M_UART_IRQHandler	16	static

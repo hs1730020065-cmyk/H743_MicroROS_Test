@@ -1,4 +1,12 @@
-../Core/Src/freertos.c:129:6:MX_FREERTOS_Init	8	static
-../Core/Src/freertos.c:171:6:StartDefaultTask	80	static
-../Core/Src/freertos.c:298:13:led_pd10_init	32	static
-../Core/Src/freertos.c:314:13:led_cmd_callback	24	static
+../Core/Src/freertos.c:287:6:MX_FREERTOS_Init	8	static
+../Core/Src/freertos.c:363:6:StartDefaultTask	80	static
+../Core/Src/freertos.c:495:6:StartControlTask	16	static
+../Core/Src/freertos.c:524:6:StartCanTask	16	static
+../Core/Src/freertos.c:542:6:StartEncoderTask	16	static
+../Core/Src/freertos.c:560:6:StartImuTask	40	static
+../Core/Src/freertos.c:594:6:StartSbusTask	88	static
+../Core/Src/freertos.c:645:6:StartBatteryTask	16	static
+../Core/Src/freertos.c:663:6:StartGpsTask	16	static
+../Core/Src/freertos.c:681:6:StartLidarTask	16	static
+../Core/Src/freertos.c:694:13:led_pd10_init	32	static
+../Core/Src/freertos.c:710:13:led_cmd_callback	24	static

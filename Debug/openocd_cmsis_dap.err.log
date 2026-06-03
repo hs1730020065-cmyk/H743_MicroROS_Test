@@ -1,0 +1,13 @@
+Open On-Chip Debugger 0.12.0+dev-00645-g2306f32ee (2026-02-09-11:36) [https://github.com/STMicroelectronics/OpenOCD]
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+swd
+srst_only separate srst_nogate srst_open_drain connect_assert_srst
+adapter speed: 1000 kHz
+0
+stm32h7x_cti_prepare_restart_one
+Info : tcl server disabled
+Info : telnet server disabled
+Error: unable to find a matching CMSIS-DAP device
+

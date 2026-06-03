@@ -1,0 +1,36 @@
+Open On-Chip Debugger 0.12.0+dev-00645-g2306f32ee (2026-02-09-11:36) [https://github.com/STMicroelectronics/OpenOCD]
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+swd
+srst_only separate srst_nogate srst_open_drain connect_assert_srst
+adapter speed: 1000 kHz
+0
+stm32h7x_cti_prepare_restart_one
+Info : tcl server disabled
+Info : telnet server disabled
+Info : CMSIS-DAP: SWD supported
+Info : CMSIS-DAP: JTAG supported
+Info : CMSIS-DAP: SWO-UART supported
+Info : CMSIS-DAP: Atomic commands supported
+Info : CMSIS-DAP: FW Version = 2.0.0
+Info : CMSIS-DAP: Interface Initialised (SWD)
+Info : SWCLK/TCK = 1 SWDIO/TMS = 1 TDI = 1 TDO = 1 nTRST = 1 nRESET = 1
+Info : Connecting under reset
+Info : CMSIS-DAP: Interface ready
+Info : clock speed 4000 kHz
+Info : SWD DPIDR 0x6ba02477
+Info : [stm32h7x.ap2] Examination succeed
+Info : [stm32h7x.cm7] Cortex-M7 r1p1 processor detected
+Info : [stm32h7x.cm7] target has 8 breakpoints, 4 watchpoints
+Info : [stm32h7x.cm7] Examination succeed
+Info : gdb port disabled
+Info : starting gdb server for stm32h7x.cm7 on 3333
+Info : Listening on port 3333 for gdb connections
+Info : [stm32h7x.cm7] external reset detected
+Info : accepting 'gdb' connection on tcp/3333
+Info : SWD DPIDR 0x6ba02477
+Error: Failed to read memory at 0x5c001000
+Error: auto_probe failed
+Error: Connect failed. Consider setting up a gdb-attach event for the target to prepare target for GDB connect, or use 'gdb_memory_map disable'.
+Error: attempted 'gdb' connection rejected
