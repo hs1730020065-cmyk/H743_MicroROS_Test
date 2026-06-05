@@ -1,5 +1,6 @@
-../Core/Src/can_motor.c:16:6:CanMotor_Init	1
-../Core/Src/can_motor.c:29:19:CanMotor_SendRawSpeed	1
-../Core/Src/can_motor.c:56:19:CanMotor_Stop	1
-../Core/Src/can_motor.c:61:19:CanMotor_Forward	2
-../Core/Src/can_motor.c:77:19:CanMotor_Reverse	1
+../Core/Src/can_motor.c:30:6:CanMotor_Init	1
+../Core/Src/can_motor.c:44:6:CanMotor_UpdateDiagnostics	3
+../Core/Src/can_motor.c:68:19:CanMotor_SendRawSpeed	2
+../Core/Src/can_motor.c:110:19:CanMotor_Stop	1
+../Core/Src/can_motor.c:115:19:CanMotor_Forward	2
+../Core/Src/can_motor.c:131:19:CanMotor_Reverse	1

@@ -3,6 +3,7 @@
 "./Core/Src/atk_ms901m_uart.o"
 "./Core/Src/can_motor.o"
 "./Core/Src/can_steer.o"
+"./Core/Src/chassis_control.o"
 "./Core/Src/dma.o"
 "./Core/Src/fdcan.o"
 "./Core/Src/freertos.o"

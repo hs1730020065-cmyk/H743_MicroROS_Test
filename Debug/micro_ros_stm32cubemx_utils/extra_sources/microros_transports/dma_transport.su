@@ -1,4 +1,4 @@
-../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:22:6:cubemx_transport_open	24	static
-../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:28:6:cubemx_transport_close	24	static
-../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:34:8:cubemx_transport_write	32	static
-../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:50:8:cubemx_transport_read	40	static,ignoring_inline_asm
+../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:23:6:cubemx_transport_open	24	static
+../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:35:6:cubemx_transport_close	24	static
+../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:41:8:cubemx_transport_write	40	static
+../micro_ros_stm32cubemx_utils/extra_sources/microros_transports/dma_transport.c:78:8:cubemx_transport_read	40	static,ignoring_inline_asm

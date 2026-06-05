@@ -1,5 +1,6 @@
-Core/Src/can_steer.o: ../Core/Src/can_steer.c ../Core/Inc/can_steer.h \
- ../Core/Inc/main.h ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h \
+Core/Src/chassis_control.o: ../Core/Src/chassis_control.c \
+ ../Core/Inc/chassis_control.h ../Core/Inc/main.h \
+ ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h \
  ../Core/Inc/stm32h7xx_hal_conf.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_def.h \
@@ -36,8 +37,8 @@ Core/Src/can_steer.o: ../Core/Src/can_steer.c ../Core/Inc/can_steer.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h \
- ../Core/Inc/fdcan.h ../Core/Inc/can_motor.h
-../Core/Inc/can_steer.h:
+ ../Core/Inc/can_motor.h ../Core/Inc/can_steer.h ../Core/Inc/fdcan.h
+../Core/Inc/chassis_control.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h:
 ../Core/Inc/stm32h7xx_hal_conf.h:
@@ -76,5 +77,6 @@ Core/Src/can_steer.o: ../Core/Src/can_steer.c ../Core/Inc/can_steer.h \
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h:
-../Core/Inc/fdcan.h:
 ../Core/Inc/can_motor.h:
+../Core/Inc/can_steer.h:
+../Core/Inc/fdcan.h:

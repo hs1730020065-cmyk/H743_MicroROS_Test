@@ -15,14 +15,21 @@
 
 // --- micro-ROS Transports ---
 #define UART_DMA_BUFFER_SIZE 2048
+#define UART_TX_TIMEOUT_MS   100U
 
-static uint8_t dma_buffer[UART_DMA_BUFFER_SIZE];
+static uint8_t dma_buffer[UART_DMA_BUFFER_SIZE] __attribute__((aligned(32)));
 static size_t dma_head = 0, dma_tail = 0;
 
 bool cubemx_transport_open(struct uxrCustomTransport * transport){
     UART_HandleTypeDef * uart = (UART_HandleTypeDef*) transport->args;
-    HAL_UART_Receive_DMA(uart, dma_buffer, UART_DMA_BUFFER_SIZE);
-    return true;
+
+    dma_head = 0;
+    dma_tail = 0;
+
+    (void)HAL_UART_Abort(uart);
+    __HAL_UART_CLEAR_OREFLAG(uart);
+
+    return (HAL_UART_Receive_DMA(uart, dma_buffer, UART_DMA_BUFFER_SIZE) == HAL_OK);
 }
 
 bool cubemx_transport_close(struct uxrCustomTransport * transport){
@@ -35,22 +42,48 @@ size_t cubemx_transport_write(struct uxrCustomTransport* transport, uint8_t * bu
     UART_HandleTypeDef * uart = (UART_HandleTypeDef*) transport->args;
 
     HAL_StatusTypeDef ret;
+    uint32_t wait_ms = 0;
+
+    if (err != NULL) {
+        *err = 0;
+    }
+
+    if (uart->gState != HAL_UART_STATE_READY){
+        (void)HAL_UART_AbortTransmit(uart);
+    }
+
     if (uart->gState == HAL_UART_STATE_READY){
         ret = HAL_UART_Transmit_DMA(uart, buf, len);
-        while (ret == HAL_OK && uart->gState != HAL_UART_STATE_READY){
+        while ((ret == HAL_OK) && (uart->gState != HAL_UART_STATE_READY) && (wait_ms < UART_TX_TIMEOUT_MS)){
             osDelay(1);
+            wait_ms++;
         }
 
-        return (ret == HAL_OK) ? len : 0;
+        if ((ret == HAL_OK) && (uart->gState == HAL_UART_STATE_READY)) {
+            return len;
+        }
+
+        (void)HAL_UART_AbortTransmit(uart);
     }else{
-        return 0;
+        ret = HAL_BUSY;
     }
+
+    if (err != NULL) {
+        *err = (uint8_t)ret;
+    }
+
+    return 0;
 }
 
 size_t cubemx_transport_read(struct uxrCustomTransport* transport, uint8_t* buf, size_t len, int timeout, uint8_t* err){
     UART_HandleTypeDef * uart = (UART_HandleTypeDef*) transport->args;
 
     int ms_used = 0;
+
+    if (err != NULL) {
+        *err = 0;
+    }
+
     do
     {
         __disable_irq();

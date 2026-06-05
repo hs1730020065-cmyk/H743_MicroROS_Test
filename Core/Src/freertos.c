@@ -33,16 +33,18 @@
 #include <rcl/error_handling.h>
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
+#include <rclc/timer.h>
 #include <rcutils/allocator.h>
 #include <rmw_microros/rmw_microros.h>
-#include <std_msgs/msg/bool.h>
 #include <std_msgs/msg/int32.h>
+#include <geometry_msgs/msg/twist.h>
 #include <uxr/client/transport.h>
 #include "can_motor.h"
 #include "can_steer.h"
 #include "sbus.h"
 #include "usart.h"
 #include "atk_ms901m.h"
+#include "chassis_control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -80,6 +82,17 @@ volatile uint8_t g_ms901m_init_status = ATK_MS901M_ERROR;
 volatile uint8_t g_ms901m_frame_ok = 0U;
 volatile uint32_t g_ms901m_rx_count = 0U;
 volatile atk_ms901m_attitude_data_t g_ms901m_attitude;
+volatile float g_chassis_cmd_linear_x = 0.0f;
+volatile float g_chassis_cmd_angular_z = 0.0f;
+volatile uint32_t g_chassis_cmd_rx_count = 0U;
+volatile uint32_t g_chassis_cmd_last_tick = 0U;
+volatile uint32_t g_microros_agent_lost_count = 0U;
+volatile uint32_t g_microros_publish_fail_count = 0U;
+volatile uint32_t g_microros_spin_error_count = 0U;
+static rcl_publisher_t g_ping_publisher;
+static rcl_publisher_t g_chassis_feedback_publisher;
+static std_msgs__msg__Int32 g_ping_msg;
+static geometry_msgs__msg__Twist g_chassis_feedback_msg;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -92,7 +105,7 @@ const osThreadAttr_t defaultTask_attributes = {
   .cb_size = sizeof(defaultTaskControlBlock),
   .stack_mem = &defaultTaskBuffer[0],
   .stack_size = sizeof(defaultTaskBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for controlTask */
 osThreadId_t controlTaskHandle;
@@ -262,8 +275,10 @@ void microros_deallocate(void * pointer, void * state);
 void * microros_reallocate(void * pointer, size_t size, void * state);
 void * microros_zero_allocate(size_t number_of_elements, size_t size_of_element, void * state);
 
-static void led_pd10_init(void);
-static void led_cmd_callback(const void * msgin);
+static void ping_timer_callback(rcl_timer_t *timer, int64_t last_call_time);
+static void chassis_feedback_timer_callback(rcl_timer_t *timer, int64_t last_call_time);
+static void cmd_vel_callback(const void *msgin);
+
 
 /* USER CODE END FunctionPrototypes */
 
@@ -355,141 +370,173 @@ void MX_FREERTOS_Init(void) {
 
 /* USER CODE BEGIN Header_StartDefaultTask */
 /**
-  * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used
-  * @retval None
+  * @brief       micro-ROS 默认通信任务
+  * @param       argument: 任务参数，当前未使用
+  * @retval      无
+  * @note        诊断固件：该任务只初始化 micro-ROS 节点，
+  *              并周期发布 /stm32_ping，用于验证串口和 agent 链路。
   */
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  (void) argument;
 
-(void) argument;
+  rmw_uros_set_custom_transport(
+  true,
+  (void *) &huart1,
+  cubemx_transport_open,
+  cubemx_transport_close,
+  cubemx_transport_write,
+  cubemx_transport_read);
 
-led_pd10_init();
+  rcl_allocator_t freeRTOS_allocator = rcutils_get_zero_initialized_allocator();
 
-rmw_uros_set_custom_transport(
-true,
-(void *) &huart1,
-cubemx_transport_open,
-cubemx_transport_close,
-cubemx_transport_write,
-cubemx_transport_read);
+  freeRTOS_allocator.allocate = microros_allocate;
+  freeRTOS_allocator.deallocate = microros_deallocate;
+  freeRTOS_allocator.reallocate = microros_reallocate;
+  freeRTOS_allocator.zero_allocate = microros_zero_allocate;
 
-rcl_allocator_t freeRTOS_allocator = rcutils_get_zero_initialized_allocator();
+  if (!rcutils_set_default_allocator(&freeRTOS_allocator))
+  {
+    for (;;)
+    {
+      osDelay(1000U);
+    }
+  }
 
-freeRTOS_allocator.allocate = microros_allocate;
-freeRTOS_allocator.deallocate = microros_deallocate;
-freeRTOS_allocator.reallocate = microros_reallocate;
-freeRTOS_allocator.zero_allocate = microros_zero_allocate;
+  rcl_allocator_t allocator = rcl_get_default_allocator();
 
-if (!rcutils_set_default_allocator(&freeRTOS_allocator))
-{
-for (;;)
-{
-osDelay(1000);
-}
-}
+  static rclc_support_t support;
+  static rcl_node_t node;
+  static rcl_subscription_t cmd_vel_subscriber;
+  static geometry_msgs__msg__Twist cmd_vel_msg;
+  static rcl_timer_t ping_timer;
+  static rcl_timer_t chassis_feedback_timer;
+  static rclc_executor_t executor;
 
-rcl_allocator_t allocator = rcl_get_default_allocator();
+  while (rclc_support_init(&support, 0, NULL, &allocator) != RCL_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(500U);
+  }
 
-static rclc_support_t support;
-static rcl_node_t node;
-static rcl_publisher_t publisher;
-static rcl_subscription_t led_subscriber;
-static rclc_executor_t executor;
-static std_msgs__msg__Int32 msg;
-static std_msgs__msg__Bool led_msg;
+  while (rclc_node_init_default(&node, "stm32_h743_node", "", &support) != RCL_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(500U);
+  }
 
-while (rclc_support_init(&support, 0, NULL, &allocator) != RCL_RET_OK)
-{
-rcl_reset_error();
-osDelay(500);
-}
+  while (rclc_publisher_init_default(
+  &g_ping_publisher,
+  &node,
+  ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+  "/stm32_ping") != RCL_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(500U);
+  }
 
-while (rclc_node_init_default(&node, "stm32_f407_node", "", &support) != RCL_RET_OK)
-{
-rcl_reset_error();
-osDelay(500);
-}
+  while (rclc_publisher_init_default(
+  &g_chassis_feedback_publisher,
+  &node,
+  ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
+  "/chassis_feedback") != RCL_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(500U);
+  }
 
-while (rclc_publisher_init_default(
-&publisher,
-&node,
-ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-"/stm32_ping") != RCL_RET_OK)
-{
-rcl_reset_error();
-osDelay(500);
-}
+  while (rclc_subscription_init_default(
+  &cmd_vel_subscriber,
+  &node,
+  ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
+  "/cmd_vel") != RCL_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(500U);
+  }
 
-while (rclc_subscription_init_default(
-&led_subscriber,
-&node,
-ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool),
-"/led_cmd") != RCL_RET_OK)
-{
-rcl_reset_error();
-osDelay(500);
-}
+  g_ping_msg.data = 0;
+  cmd_vel_msg.linear.x = 0.0;
+  cmd_vel_msg.linear.y = 0.0;
+  cmd_vel_msg.linear.z = 0.0;
+  cmd_vel_msg.angular.x = 0.0;
+  cmd_vel_msg.angular.y = 0.0;
+  cmd_vel_msg.angular.z = 0.0;
+  g_chassis_feedback_msg = cmd_vel_msg;
 
-while (rclc_executor_init(&executor, &support.context, 1, &allocator) != RCL_RET_OK)
-{
-rcl_reset_error();
-osDelay(500);
-}
+  while (rclc_timer_init_default(
+  &ping_timer,
+  &support,
+  RCL_MS_TO_NS(200),
+  ping_timer_callback) != RCL_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(500U);
+  }
 
-msg.data = 0;
-led_msg.data = false;
+  while (rclc_timer_init_default(
+  &chassis_feedback_timer,
+  &support,
+  RCL_MS_TO_NS(200),
+  chassis_feedback_timer_callback) != RCL_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(500U);
+  }
 
-while (rclc_executor_add_subscription(
-&executor,
-&led_subscriber,
-&led_msg,
-led_cmd_callback,
-ON_NEW_DATA) != RCL_RET_OK)
-{
-rcl_reset_error();
-osDelay(500);
-}
+  while (rclc_executor_init(&executor, &support.context, 3, &allocator) != RCL_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(500U);
+  }
 
-uint32_t last_publish = osKernelGetTickCount();
+  while (rclc_executor_add_subscription(
+  &executor,
+  &cmd_vel_subscriber,
+  &cmd_vel_msg,
+  cmd_vel_callback,
+  ON_NEW_DATA) != RCL_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(500U);
+  }
 
-for (;;)
-{
-rcl_ret_t spin_ret = rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
+  while (rclc_executor_add_timer(&executor, &ping_timer) != RCL_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(500U);
+  }
 
-if ((spin_ret != RCL_RET_OK) && (spin_ret != RCL_RET_TIMEOUT))
-{
-rcl_reset_error();
-}
+  while (rclc_executor_add_timer(&executor, &chassis_feedback_timer) != RCL_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(500U);
+  }
 
-uint32_t now = osKernelGetTickCount();
+  for (;;)
+  {
+    rcl_ret_t spin_ret = rclc_executor_spin_some(&executor, RCL_MS_TO_NS(50));
 
-if ((now - last_publish) >= pdMS_TO_TICKS(1000))
-{
-last_publish = now;
+    if ((spin_ret != RCL_RET_OK) && (spin_ret != RCL_RET_TIMEOUT))
+    {
+      g_microros_spin_error_count++;
+      rcl_reset_error();
+    }
 
-if (rcl_publish(&publisher, &msg, NULL) == RCL_RET_OK)
-{
-msg.data++;
-}
-else
-{
-rcl_reset_error();
-}
-}
-
-osDelay(10);
-}
+    osDelay(10U);
+  }
   /* USER CODE END StartDefaultTask */
 }
 
 /* USER CODE BEGIN Header_StartControlTask */
 /**
-* @brief Function implementing the controlTask thread.
-* @param argument: Not used
-* @retval None
+* @brief       底盘 10ms 控制任务
+* @param       argument: 任务参数，当前未使用
+* @retval      无
+* @note        周期读取 /cmd_vel 更新的线速度和角速度，
+*              调用 Chassis_ControlFromCmdVel() 计算后驱速度和前轮转角。
 */
 /* USER CODE END Header_StartControlTask */
 void StartControlTask(void *argument)
@@ -498,17 +545,34 @@ void StartControlTask(void *argument)
   (void)argument;
 
   /*
-   * UART5 serial-assistant command test:
-   * keep rear drive stopped and EPS centered while testing text commands.
-   * Wheels must still be off the ground during bench tests.
+   * 控制任务启动时先打开 FDCAN1，并把后驱和转向都置到安全零值。
+   * 后续 10ms 循环只负责根据 /cmd_vel 周期刷新目标。
    */
   CanMotor_Init();
+  g_can_motor_last_status = CanMotor_Stop();
+  g_eps_steer_last_status = EpsSteer_SetManualMode();
+  g_eps_steer_last_status = EpsSteer_SetZero();
 
+  /*
+   * 10ms 底盘控制循环。
+   * micro-ROS 的 /cmd_vel 回调负责更新 g_chassis_cmd_linear_x 和 g_chassis_cmd_angular_z，
+   * 这里统一转换成后驱电机目标速度和前轮转向目标角度。
+   */
   for (;;)
   {
-    g_can_motor_last_status = CanMotor_Stop();
-    g_eps_steer_last_status = EpsSteer_SetZero();
-    osDelay(20U);
+    uint32_t now = osKernelGetTickCount();
+
+    if ((g_chassis_cmd_last_tick == 0U) || ((now - g_chassis_cmd_last_tick) > pdMS_TO_TICKS(500)))
+    {
+      g_chassis_cmd_linear_x = 0.0f;
+      g_chassis_cmd_angular_z = 0.0f;
+    }
+
+    Chassis_ControlFromCmdVel(g_chassis_cmd_linear_x, g_chassis_cmd_angular_z);
+    g_can_motor_last_status = g_drive_motor_can_status;
+    g_eps_steer_last_status = g_steer_motor_can_status;
+    CanMotor_UpdateDiagnostics();
+    osDelay(10U);
   }
 
   /* USER CODE END StartControlTask */
@@ -527,7 +591,7 @@ void StartCanTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000U);
   }
   /* USER CODE END StartCanTask */
 }
@@ -545,7 +609,7 @@ void StartEncoderTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000U);
   }
   /* USER CODE END StartEncoderTask */
 }
@@ -648,7 +712,7 @@ void StartBatteryTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000U);
   }
   /* USER CODE END StartBatteryTask */
 }
@@ -666,7 +730,7 @@ void StartGpsTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000U);
   }
   /* USER CODE END StartGpsTask */
 }
@@ -684,41 +748,79 @@ void StartLidarTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000U);
   }
   /* USER CODE END StartLidarTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-static void led_pd10_init(void)
+
+
+/**
+ * @brief       /stm32_ping 定时发布回调函数
+ * @param       timer         : 触发本回调的 rcl 定时器
+ *              last_call_time: 上一次触发时间，当前未使用
+ * @retval      无
+ */
+static void ping_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 {
-GPIO_InitTypeDef GPIO_InitStruct = {0};
+  (void)timer;
+  (void)last_call_time;
 
-__HAL_RCC_GPIOD_CLK_ENABLE();
-
-HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10, GPIO_PIN_SET);
-
-GPIO_InitStruct.Pin = GPIO_PIN_10;
-GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-GPIO_InitStruct.Pull = GPIO_NOPULL;
-GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-
-HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+  if (rcl_publish(&g_ping_publisher, &g_ping_msg, NULL) == RCL_RET_OK)
+  {
+    g_ping_msg.data++;
+    g_microros_publish_fail_count = 0U;
+  }
+  else
+  {
+    g_microros_publish_fail_count++;
+    rcl_reset_error();
+  }
 }
 
-static void led_cmd_callback(const void * msgin)
+/**
+ * @brief       /chassis_feedback 定时发布回调函数
+ * @param       timer         : 触发本回调的 rcl 定时器
+ *              last_call_time: 上一次触发时间，当前未使用
+ * @retval      无
+ */
+static void chassis_feedback_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 {
-const std_msgs__msg__Bool * led_cmd = (const std_msgs__msg__Bool *) msgin;
+  (void)timer;
+  (void)last_call_time;
 
-if ((led_cmd != NULL) && led_cmd->data)
-{
-HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10, GPIO_PIN_RESET);
+  g_chassis_feedback_msg.linear.x = (double)g_chassis_cmd_linear_x;
+  g_chassis_feedback_msg.linear.y = (double)g_drive_motor_target_speed_mps;
+  g_chassis_feedback_msg.linear.z = (double)g_fdcan_tx_fifo_free_level;
+  g_chassis_feedback_msg.angular.x = (double)g_fdcan_tx_error_count;
+  g_chassis_feedback_msg.angular.y = (double)g_steer_motor_target_angle_deg;
+  g_chassis_feedback_msg.angular.z = (double)g_chassis_cmd_angular_z;
+
+  if (rcl_publish(&g_chassis_feedback_publisher, &g_chassis_feedback_msg, NULL) != RCL_RET_OK)
+  {
+    g_microros_publish_fail_count++;
+    rcl_reset_error();
+  }
 }
-else
+
+/**
+ * @brief       micro-ROS /cmd_vel 订阅回调函数
+ * @param       msgin: geometry_msgs/msg/Twist 类型消息指针
+ * @retval      无
+ * @note        只使用 linear.x 和 angular.z，分别作为阿克曼底盘线速度和角速度输入。
+ */
+static void cmd_vel_callback(const void *msgin)
 {
-HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10, GPIO_PIN_SET);
-}
+  const geometry_msgs__msg__Twist *cmd_vel = (const geometry_msgs__msg__Twist *)msgin;
+
+  if (cmd_vel != NULL)
+  {
+    g_chassis_cmd_linear_x = (float)cmd_vel->linear.x;
+    g_chassis_cmd_angular_z = (float)cmd_vel->angular.z;
+    g_chassis_cmd_last_tick = osKernelGetTickCount();
+    g_chassis_cmd_rx_count++;
+  }
 }
 /* USER CODE END Application */
-
