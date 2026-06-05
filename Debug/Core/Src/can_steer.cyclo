@@ -1,4 +1,4 @@
-../Core/Src/can_steer.c:16:26:EpsSteer_SendFrame	2
-../Core/Src/can_steer.c:50:19:EpsSteer_SendTargetAngle	1
-../Core/Src/can_steer.c:62:19:EpsSteer_SetManualMode	1
-../Core/Src/can_steer.c:69:19:EpsSteer_SetZero	1
+../Core/Src/can_steer.c:19:26:EpsSteer_SendFrame	2
+../Core/Src/can_steer.c:54:19:EpsSteer_SendTargetAngle	1
+../Core/Src/can_steer.c:67:19:EpsSteer_SetManualMode	1
+../Core/Src/can_steer.c:74:19:EpsSteer_SetZero	1

@@ -34,6 +34,13 @@
 #define CHASSIS_RAD_TO_DEG            57.2957795f
 
 /*
+ * 转向电机协议的正方向与 ROS2 angular.z 的正方向相反。
+ * ROS2 中 angular.z > 0 表示左转；当前 EPS 正角度实际表现为右转，
+ * 因此这里统一乘 -1，让键盘/ROS2 的左转右转和实车方向一致。
+ */
+#define CHASSIS_STEER_DIRECTION_SIGN  (-1.0f)
+
+/*
  * 后驱电机 CAN 协议当前只提供 raw_speed 接口。
  * 这里先把 2.22 m/s 映射成 1000 的原始速度，方便第一次架空低速测试；
  * 如果实车速度偏慢或偏快，后续只需要标定这个最大 raw 值。
@@ -174,7 +181,7 @@ void Ackermann_Calc(float linear_x, float angular_z, AckermannTarget_t *out)
    * 这里使用限幅后的 speed_mps 参与计算，使转向角和最终下发速度一致。
    */
   steer_rad = atanf((CHASSIS_WHEEL_BASE_M * angular_z) / speed_mps);
-  steer_deg = steer_rad * CHASSIS_RAD_TO_DEG;
+  steer_deg = steer_rad * CHASSIS_RAD_TO_DEG * CHASSIS_STEER_DIRECTION_SIGN;
 
   /*
    * 转向角按最小转弯半径限制到 +/-21.2 度，
