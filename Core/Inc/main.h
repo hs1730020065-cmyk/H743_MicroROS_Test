@@ -57,6 +57,22 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define RIGHT_FRONT_LED_Pin GPIO_PIN_10
+#define RIGHT_FRONT_LED_GPIO_Port GPIOG
+#define LEFT_FRONT_LED_Pin GPIO_PIN_5
+#define LEFT_FRONT_LED_GPIO_Port GPIOD
+#define HIGH_BEAM_Pin GPIO_PIN_0
+#define HIGH_BEAM_GPIO_Port GPIOI
+#define RIGHT_REAL_LED_Pin GPIO_PIN_3
+#define RIGHT_REAL_LED_GPIO_Port GPIOI
+#define LEFT_REAL_LED_Pin GPIO_PIN_11
+#define LEFT_REAL_LED_GPIO_Port GPIOG
+#define TURN_EN_Pin GPIO_PIN_6
+#define TURN_EN_GPIO_Port GPIOD
+#define LOW_BEAM_Pin GPIO_PIN_1
+#define LOW_BEAM_GPIO_Port GPIOI
+#define DRIVE_EN_Pin GPIO_PIN_9
+#define DRIVE_EN_GPIO_Port GPIOG
 #define BAT_V_ADC_Pin GPIO_PIN_6
 #define BAT_V_ADC_GPIO_Port GPIOA
 #define BAT_I_ADC_Pin GPIO_PIN_11

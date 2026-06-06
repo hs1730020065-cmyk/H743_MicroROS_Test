@@ -17,14 +17,14 @@
   */
 /* USER CODE END Header */
 
-/* 包含文件 ------------------------------------------------------------------*/
+/* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 
-/* 私有包含文件 --------------------------------------------------------------*/
+/* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
 #include <stddef.h>
@@ -47,7 +47,7 @@
 #include "chassis_control.h"
 /* USER CODE END Includes */
 
-/* 私有类型定义：本文件内部任务/队列使用的数据结构 ----------------------------*/
+/* Private typedef -----------------------------------------------------------*/
 typedef StaticTask_t osStaticThreadDef_t;
 typedef StaticQueue_t osStaticMessageQDef_t;
 /* USER CODE BEGIN PTD */
@@ -60,17 +60,17 @@ typedef struct
 
 /* USER CODE END PTD */
 
-/* 私有宏定义 ----------------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
 /* USER CODE END PD */
 
-/* 私有宏 --------------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
 /* USER CODE END PM */
 
-/* 私有变量：任务间共享的运行状态和micro-ROS对象 ------------------------------*/
+/* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 /* 最近一次后驱电机和转向电机CAN下发状态，供调试或反馈查看。 */
 volatile HAL_StatusTypeDef g_can_motor_last_status = HAL_OK;
@@ -102,7 +102,7 @@ static std_msgs__msg__Int32 g_ping_msg;
 static geometry_msgs__msg__Twist g_chassis_feedback_msg;
 
 /* USER CODE END Variables */
-/* defaultTask：micro-ROS节点、订阅、发布和executor所在任务 */
+/* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 uint32_t defaultTaskBuffer[ 3000 ];
 osStaticThreadDef_t defaultTaskControlBlock;
@@ -112,9 +112,9 @@ const osThreadAttr_t defaultTask_attributes = {
   .cb_size = sizeof(defaultTaskControlBlock),
   .stack_mem = &defaultTaskBuffer[0],
   .stack_size = sizeof(defaultTaskBuffer),
-  .priority = (osPriority_t) osPriorityAboveNormal,
+  .priority = (osPriority_t) osPriorityNormal,
 };
-/* controlTask：10ms底盘控制任务，根据最新/cmd_vel下发后驱和转向 */
+/* Definitions for controlTask */
 osThreadId_t controlTaskHandle;
 uint32_t controlTaskBuffer[ 1024 ];
 osStaticThreadDef_t controlTaskControlBlock;
@@ -126,7 +126,7 @@ const osThreadAttr_t controlTask_attributes = {
   .stack_size = sizeof(controlTaskBuffer),
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
-/* canTask：CAN后台任务预留，当前仅保持线程存活 */
+/* Definitions for canTask */
 osThreadId_t canTaskHandle;
 uint32_t canTaskBuffer[ 1024 ];
 osStaticThreadDef_t canTaskControlBlock;
@@ -138,7 +138,7 @@ const osThreadAttr_t canTask_attributes = {
   .stack_size = sizeof(canTaskBuffer),
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
-/* encoderTask：编码器采集任务预留，当前仅保持线程存活 */
+/* Definitions for encoderTask */
 osThreadId_t encoderTaskHandle;
 uint32_t encoderTaskBuffer[ 512 ];
 osStaticThreadDef_t encoderTaskControlBlock;
@@ -150,7 +150,7 @@ const osThreadAttr_t encoderTask_attributes = {
   .stack_size = sizeof(encoderTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* imuTask：MS901M姿态传感器初始化和周期读取任务 */
+/* Definitions for imuTask */
 osThreadId_t imuTaskHandle;
 uint32_t imuTaskBuffer[ 1024 ];
 osStaticThreadDef_t imuTaskControlBlock;
@@ -162,7 +162,7 @@ const osThreadAttr_t imuTask_attributes = {
   .stack_size = sizeof(imuTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* sbusTask：SBUS遥控帧接收、解析和故障状态更新任务 */
+/* Definitions for sbusTask */
 osThreadId_t sbusTaskHandle;
 uint32_t sbusTaskBuffer[ 1024 ];
 osStaticThreadDef_t sbusTaskControlBlock;
@@ -174,7 +174,7 @@ const osThreadAttr_t sbusTask_attributes = {
   .stack_size = sizeof(sbusTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* batteryTask：电池监测任务预留，当前仅保持线程存活 */
+/* Definitions for batteryTask */
 osThreadId_t batteryTaskHandle;
 uint32_t batteryTaskBuffer[ 512 ];
 osStaticThreadDef_t batteryTaskControlBlock;
@@ -186,7 +186,7 @@ const osThreadAttr_t batteryTask_attributes = {
   .stack_size = sizeof(batteryTaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
-/* gpsTask：GPS任务预留，当前仅保持线程存活 */
+/* Definitions for gpsTask */
 osThreadId_t gpsTaskHandle;
 uint32_t gpsTaskBuffer[ 1024 ];
 osStaticThreadDef_t gpsTaskControlBlock;
@@ -198,7 +198,7 @@ const osThreadAttr_t gpsTask_attributes = {
   .stack_size = sizeof(gpsTaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
-/* lidarTask：雷达任务预留，当前仅保持线程存活 */
+/* Definitions for lidarTask */
 osThreadId_t lidarTaskHandle;
 uint32_t lidarTaskBuffer[ 1024 ];
 osStaticThreadDef_t lidarTaskControlBlock;
@@ -210,7 +210,7 @@ const osThreadAttr_t lidarTask_attributes = {
   .stack_size = sizeof(lidarTaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
-/* canRxQueue队列定义：预留给FDCAN接收帧缓存，当前本文件尚未投递/消费 */
+/* Definitions for canRxQueue */
 osMessageQueueId_t canRxQueueHandle;
 uint8_t canRxQueueBuffer[ 32 * sizeof( CanRxMsg_t ) ];
 osStaticMessageQDef_t canRxQueueControlBlock;
@@ -221,7 +221,7 @@ const osMessageQueueAttr_t canRxQueue_attributes = {
   .mq_mem = &canRxQueueBuffer,
   .mq_size = sizeof(canRxQueueBuffer)
 };
-/* cmdVelQueue队列定义：预留给速度命令队列，当前/cmd_vel通过全局变量传递 */
+/* Definitions for cmdVelQueue */
 osMessageQueueId_t cmdVelQueueHandle;
 uint8_t cmdVelQueueBuffer[ 4 * sizeof( uint32_t ) ];
 osStaticMessageQDef_t cmdVelQueueControlBlock;
@@ -232,7 +232,7 @@ const osMessageQueueAttr_t cmdVelQueue_attributes = {
   .mq_mem = &cmdVelQueueBuffer,
   .mq_size = sizeof(cmdVelQueueBuffer)
 };
-/* sbusQueue队列定义：预留给SBUS事件队列，当前SBUS任务直接轮询帧计数 */
+/* Definitions for sbusQueue */
 osMessageQueueId_t sbusQueueHandle;
 uint8_t sbusQueueBuffer[ 4 * sizeof( uint32_t ) ];
 osStaticMessageQDef_t sbusQueueControlBlock;
@@ -244,7 +244,7 @@ const osMessageQueueAttr_t sbusQueue_attributes = {
   .mq_size = sizeof(sbusQueueBuffer)
 };
 
-/* 私有函数声明 --------------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 bool cubemx_transport_open(struct uxrCustomTransport * transport);
 bool cubemx_transport_close(struct uxrCustomTransport * transport);
@@ -299,12 +299,12 @@ void StartBatteryTask(void *argument);
 void StartGpsTask(void *argument);
 void StartLidarTask(void *argument);
 
-void MX_FREERTOS_Init(void); /* MISRA C 2004规则8.1 */
+void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  创建本文件定义的消息队列和FreeRTOS线程。
-  * @param  无
-  * @retval 无
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
@@ -323,46 +323,46 @@ void MX_FREERTOS_Init(void) {
   /* 当前没有创建CMSIS-OS定时器；micro-ROS定时器在defaultTask内初始化。 */
   /* USER CODE END RTOS_TIMERS */
 
-  /* 创建静态消息队列；当前控制命令和SBUS状态主要通过全局变量共享。 */
-  /* 创建canRxQueue：容量32帧，预留给CAN接收缓存。 */
+  /* Create the queue(s) */
+  /* creation of canRxQueue */
   canRxQueueHandle = osMessageQueueNew (32, sizeof(CanRxMsg_t), &canRxQueue_attributes);
 
-  /* 创建cmdVelQueue：容量4个uint32_t，当前未用于/cmd_vel传递。 */
+  /* creation of cmdVelQueue */
   cmdVelQueueHandle = osMessageQueueNew (4, sizeof(uint32_t), &cmdVelQueue_attributes);
 
-  /* 创建sbusQueue：容量4个uint32_t，当前SBUS任务未使用该队列。 */
+  /* creation of sbusQueue */
   sbusQueueHandle = osMessageQueueNew (4, sizeof(uint32_t), &sbusQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* 队列已在上方创建，这里没有额外队列。 */
   /* USER CODE END RTOS_QUEUES */
 
-  /* 创建各功能线程；真实业务集中在default/control/imu/sbus四个任务。 */
-  /* 创建micro-ROS通信和executor任务。 */
+  /* Create the thread(s) */
+  /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* 创建10ms底盘控制任务。 */
+  /* creation of controlTask */
   controlTaskHandle = osThreadNew(StartControlTask, NULL, &controlTask_attributes);
 
-  /* 创建CAN预留后台任务。 */
+  /* creation of canTask */
   canTaskHandle = osThreadNew(StartCanTask, NULL, &canTask_attributes);
 
-  /* 创建编码器预留任务。 */
+  /* creation of encoderTask */
   encoderTaskHandle = osThreadNew(StartEncoderTask, NULL, &encoderTask_attributes);
 
-  /* 创建MS901M姿态读取任务。 */
+  /* creation of imuTask */
   imuTaskHandle = osThreadNew(StartImuTask, NULL, &imuTask_attributes);
 
-  /* 创建SBUS遥控解析任务。 */
+  /* creation of sbusTask */
   sbusTaskHandle = osThreadNew(StartSbusTask, NULL, &sbusTask_attributes);
 
-  /* 创建电池监测预留任务。 */
+  /* creation of batteryTask */
   batteryTaskHandle = osThreadNew(StartBatteryTask, NULL, &batteryTask_attributes);
 
-  /* 创建GPS预留任务。 */
+  /* creation of gpsTask */
   gpsTaskHandle = osThreadNew(StartGpsTask, NULL, &gpsTask_attributes);
 
-  /* 创建雷达预留任务。 */
+  /* creation of lidarTask */
   lidarTaskHandle = osThreadNew(StartLidarTask, NULL, &lidarTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -777,7 +777,7 @@ void StartLidarTask(void *argument)
   /* USER CODE END StartLidarTask */
 }
 
-/* 私有应用代码 --------------------------------------------------------------*/
+/* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
 
@@ -855,3 +855,4 @@ static void cmd_vel_callback(const void *msgin)
   }
 }
 /* USER CODE END Application */
+
