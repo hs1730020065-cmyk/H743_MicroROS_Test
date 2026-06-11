@@ -17,6 +17,8 @@ extern "C" {
 #include "main.h"
 #include <stdint.h>
 
+#define CAN_MOTOR_FEEDBACK_ID 0x186U
+
 /* 初始化 FDCAN1 并刷新诊断状态。 */
 void CanMotor_Init(void);
 /* 读取并更新 FDCAN1 诊断信息。 */

@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+﻿/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file    chassis_control.c
@@ -24,8 +24,8 @@
 /* 后驱电机目标速度限幅：最高速度约 2.22 m/s。 */
 #define CHASSIS_MAX_SPEED_MPS         2.22f
 
-/* 最小转弯半径 1.7 m 推算：atan(0.660 / 1.7) ~= 21.2 deg。 */
-#define CHASSIS_MAX_STEER_ANGLE_DEG   21.2f
+/* 最大车轮转角 30 deg（实测 EPS 最大支持 30°）。 */
+#define CHASSIS_MAX_STEER_ANGLE_DEG   30.0f
 
 /* linear_x 过小时不再计算 atan(L*w/v)，避免除以接近 0 的速度。 */
 #define CHASSIS_LINEAR_X_EPS_MPS      0.01f
@@ -40,17 +40,22 @@
  */
 #define CHASSIS_STEER_DIRECTION_SIGN  (-1.0f)
 
-/*
- * 后驱电机 CAN 协议当前只提供 raw_speed 接口。
- * 这里先把 2.22 m/s 映射成 1000 的原始速度，方便第一次架空低速测试；
- * 如果实车速度偏慢或偏快，后续只需要标定这个最大 raw 值。
- */
-#define CHASSIS_DRIVE_MAX_RAW_SPEED   1000U
+/* raw_abs = round(abs(speed_mps) * 454.5). Direction is encoded in can_motor.c. */
+#define CHASSIS_DRIVE_SPEED_TO_RAW_SCALE  454.5f
+#define CHASSIS_DRIVE_MAX_RAW_ABS         0x8000U
 
 /* 后驱电机当前目标车速，供调试观察或 micro-ROS 状态反馈使用。 */
 volatile float g_drive_motor_target_speed_mps = 0.0f;
+volatile float g_drive_motor_actual_speed_mps = 0.0f;
+volatile uint16_t g_drive_motor_actual_speed_raw = 0U;
+volatile uint32_t g_drive_motor_feedback_rx_count = 0U;
+volatile uint32_t g_drive_motor_feedback_last_tick = 0U;
 /* 转向电机当前目标角度，供调试观察或 micro-ROS 状态反馈使用。 */
 volatile float g_steer_motor_target_angle_deg = 0.0f;
+/* 转向电机当前实际角度（来自 EPS 0x18F 反馈），单位：度。 */
+volatile float g_steer_motor_actual_angle_deg = 0.0f;
+/* 车辆当前实际横摆角速度（由阿克曼模型解算），单位：弧度/秒。 */
+volatile float g_chassis_actual_angular_z = 0.0f;
 /* 最近一次后驱电机 CAN 下发状态。 */
 volatile HAL_StatusTypeDef g_drive_motor_can_status = HAL_OK;
 /* 最近一次转向电机 CAN 下发状态。 */
@@ -89,12 +94,9 @@ static float Chassis_LimitFloat(float value, float min_value, float max_value)
 }
 
 /**
- * @brief       将后驱目标车速换算成电机 CAN 原始速度值
- * @param       speed_mps: 后驱目标车速，单位：米/秒（m/s），允许正负
- * @retval      电机协议使用的无符号原始速度绝对值
- * @note        当前电机协议没有给出 m/s 和 raw_speed 的精确比例，
- *              因此先按最高车速线性映射到 CHASSIS_DRIVE_MAX_RAW_SPEED。
- *              实车标定时只需要调整 CHASSIS_DRIVE_MAX_RAW_SPEED。
+ * Convert ROS2 /cmd_vel linear speed to motor raw magnitude.
+ * raw_abs = round(abs(speed_mps) * 454.5).
+ * Direction is encoded later by CanMotor_Forward()/CanMotor_Reverse().
  */
 static uint16_t Chassis_SpeedMpsToRaw(float speed_mps)
 {
@@ -104,19 +106,52 @@ static uint16_t Chassis_SpeedMpsToRaw(float speed_mps)
   speed_abs = Chassis_AbsFloat(speed_mps);
   speed_abs = Chassis_LimitFloat(speed_abs, 0.0f, CHASSIS_MAX_SPEED_MPS);
 
-  raw_float = (speed_abs / CHASSIS_MAX_SPEED_MPS) * (float)CHASSIS_DRIVE_MAX_RAW_SPEED;
+  raw_float = speed_abs * CHASSIS_DRIVE_SPEED_TO_RAW_SCALE;
 
   if (raw_float <= 0.0f)
   {
     return 0U;
   }
 
-  if (raw_float >= (float)CHASSIS_DRIVE_MAX_RAW_SPEED)
+  if (raw_float >= (float)CHASSIS_DRIVE_MAX_RAW_ABS)
   {
-    return CHASSIS_DRIVE_MAX_RAW_SPEED;
+    return CHASSIS_DRIVE_MAX_RAW_ABS;
   }
 
   return (uint16_t)(raw_float + 0.5f);
+}
+
+float DriveMotor_RawFeedbackToSpeed(uint16_t raw_speed)
+{
+  uint16_t speed_abs_raw;
+  float speed_mps;
+
+  if (raw_speed == 0U)
+  {
+    return 0.0f;
+  }
+
+  /*
+   * 补码协议:
+   * raw >= 0x8000: 正转 (two's complement 负数)
+   *   0x8000 = -32768 = 最快正转
+   *   0xFFFF = -1     = 最慢正转
+   * raw <  0x8000: 反转 (two's complement 非负数)
+   *   0x0001 = +1     = 最慢反转
+   *   0x7FFF = +32767 = 最快反转
+   */
+  if (raw_speed >= 0x8000U)
+  {
+    speed_abs_raw = (uint16_t)(0x10000UL - (uint32_t)raw_speed);
+    speed_mps = (float)speed_abs_raw / CHASSIS_DRIVE_SPEED_TO_RAW_SCALE;
+  }
+  else
+  {
+    speed_abs_raw = raw_speed;
+    speed_mps = -((float)speed_abs_raw / CHASSIS_DRIVE_SPEED_TO_RAW_SCALE);
+  }
+
+  return speed_mps;
 }
 
 /**
@@ -284,4 +319,39 @@ void SteerMotor_SetAngle(float angle_deg)
    */
   angle_raw_deg = Chassis_AngleDegToInt16(limited_angle_deg);
   g_steer_motor_can_status = EpsSteer_SendTargetAngle(angle_raw_deg);
+}
+
+/**
+ * @brief       根据实际线速度和转向角计算车辆实际横摆角速度（阿克曼单轨模型）
+ * @param       linear_x_mps : 车辆实际纵向线速度，单位：米/秒（m/s）
+ *              steer_angle_deg: 实际前轮转向角，单位：度（deg）
+ *              正值 = 右转（EPS 协议方向），负值 = 左转
+ * @retval      车辆绕 Z 轴的实际角速度，单位：弧度/秒（rad/s）
+ *              正值 = 左转（ROS 坐标系），负值 = 右转
+ * @note        ω = v * tan(δ) / L
+ *              EPS 反馈角度为正时右转，ROS angular.z 为正时左转，
+ *              因此输出需要取反。
+ *              当线速度接近 0 时，车辆无法产生有意义的横摆角速度，返回 0。
+ */
+float Chassis_CalcActualYawRate(float linear_x_mps, float steer_angle_deg)
+{
+  float speed_abs;
+  float steer_rad;
+  float yaw_rate;
+
+  speed_abs = Chassis_AbsFloat(linear_x_mps);
+
+  /* 车速极低时没有有意义的横摆角速度。 */
+  if (speed_abs < CHASSIS_LINEAR_X_EPS_MPS)
+  {
+    return 0.0f;
+  }
+
+  /* 角度 -> 弧度，方向取反以匹配 ROS 坐标系。 */
+  steer_rad = steer_angle_deg * (1.0f / CHASSIS_RAD_TO_DEG) * CHASSIS_STEER_DIRECTION_SIGN;
+
+  /* 阿克曼单轨模型: ω = v * tan(δ) / L。 */
+  yaw_rate = linear_x_mps * tanf(steer_rad) / CHASSIS_WHEEL_BASE_M;
+
+  return yaw_rate;
 }

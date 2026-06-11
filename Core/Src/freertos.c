@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <rcl/rcl.h>
@@ -36,11 +37,14 @@
 #include <rclc/timer.h>
 #include <rcutils/allocator.h>
 #include <rmw_microros/rmw_microros.h>
+#include <rmw_microros/time_sync.h>
 #include <std_msgs/msg/int32.h>
 #include <geometry_msgs/msg/twist.h>
+#include <nav_msgs/msg/odometry.h>
 #include <uxr/client/transport.h>
 #include "can_motor.h"
 #include "can_steer.h"
+#include "fdcan.h"
 #include "sbus.h"
 #include "usart.h"
 #include "atk_ms901m.h"
@@ -97,9 +101,15 @@ volatile uint32_t g_microros_publish_fail_count = 0U;
 volatile uint32_t g_microros_spin_error_count = 0U;
 /* micro-ROS发布器和消息对象，由defaultTask初始化后长期使用。 */
 static rcl_publisher_t g_ping_publisher;
-static rcl_publisher_t g_chassis_feedback_publisher;
+static rcl_publisher_t g_odom_publisher;
 static std_msgs__msg__Int32 g_ping_msg;
-static geometry_msgs__msg__Twist g_chassis_feedback_msg;
+static nav_msgs__msg__Odometry g_odom_msg;
+
+/* 里程计位姿积分变量。 */
+static float g_odom_pose_x = 0.0f;
+static float g_odom_pose_y = 0.0f;
+static float g_odom_pose_theta = 0.0f;
+static uint32_t g_odom_last_tick = 0U;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -283,8 +293,9 @@ void * microros_reallocate(void * pointer, size_t size, void * state);
 void * microros_zero_allocate(size_t number_of_elements, size_t size_of_element, void * state);
 
 static void ping_timer_callback(rcl_timer_t *timer, int64_t last_call_time);
-static void chassis_feedback_timer_callback(rcl_timer_t *timer, int64_t last_call_time);
+static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time);
 static void cmd_vel_callback(const void *msgin);
+static void can_rx_process(const CanRxMsg_t *msg);
 
 
 /* USER CODE END FunctionPrototypes */
@@ -421,7 +432,7 @@ void StartDefaultTask(void *argument)
   static rcl_subscription_t cmd_vel_subscriber;
   static geometry_msgs__msg__Twist cmd_vel_msg;
   static rcl_timer_t ping_timer;
-  static rcl_timer_t chassis_feedback_timer;
+  static rcl_timer_t odom_timer;
   static rclc_executor_t executor;
 
   /* 以下micro-ROS对象初始化失败时会清除错误并等待重试。 */
@@ -448,10 +459,10 @@ void StartDefaultTask(void *argument)
   }
 
   while (rclc_publisher_init_default(
-  &g_chassis_feedback_publisher,
+  &g_odom_publisher,
   &node,
-  ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
-  "/chassis_feedback") != RCL_RET_OK)
+  ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry),
+  "/odom") != RCL_RET_OK)
   {
     rcl_reset_error();
     osDelay(500U);
@@ -474,7 +485,14 @@ void StartDefaultTask(void *argument)
   cmd_vel_msg.angular.x = 0.0;
   cmd_vel_msg.angular.y = 0.0;
   cmd_vel_msg.angular.z = 0.0;
-  g_chassis_feedback_msg = cmd_vel_msg;
+
+  /* 里程计消息初始化。 */
+  g_odom_msg.header.frame_id.data = (char *)"odom";
+  g_odom_msg.header.frame_id.size = 4;
+  g_odom_msg.header.frame_id.capacity = 5;
+  g_odom_msg.child_frame_id.data = (char *)"base_link";
+  g_odom_msg.child_frame_id.size = 9;
+  g_odom_msg.child_frame_id.capacity = 10;
 
   while (rclc_timer_init_default(
   &ping_timer,
@@ -487,10 +505,10 @@ void StartDefaultTask(void *argument)
   }
 
   while (rclc_timer_init_default(
-  &chassis_feedback_timer,
+  &odom_timer,
   &support,
   RCL_MS_TO_NS(200),
-  chassis_feedback_timer_callback) != RCL_RET_OK)
+  odom_timer_callback) != RCL_RET_OK)
   {
     rcl_reset_error();
     osDelay(500U);
@@ -520,10 +538,17 @@ void StartDefaultTask(void *argument)
     osDelay(500U);
   }
 
-  while (rclc_executor_add_timer(&executor, &chassis_feedback_timer) != RCL_RET_OK)
+  while (rclc_executor_add_timer(&executor, &odom_timer) != RCL_RET_OK)
   {
     rcl_reset_error();
     osDelay(500U);
+  }
+
+  /* 通过串口与 Agent 同步时间，使 odom 时间戳与 ROS 时间对齐。 */
+  while (rmw_uros_sync_session(1000) != RMW_RET_OK)
+  {
+    rcl_reset_error();
+    osDelay(100U);
   }
 
   /* 主循环驱动micro-ROS executor，最多等待50ms处理一次事件。 */
@@ -603,10 +628,17 @@ void StartControlTask(void *argument)
 void StartCanTask(void *argument)
 {
   /* USER CODE BEGIN StartCanTask */
+  (void)argument;
+
   /* 当前任务尚无具体业务，周期延时保持线程存活。 */
   for(;;)
   {
-    osDelay(1000U);
+    CanRxMsg_t rx_msg;
+
+    if (osMessageQueueGet(canRxQueueHandle, &rx_msg, NULL, osWaitForever) == osOK)
+    {
+      can_rx_process(&rx_msg);
+    }
   }
   /* USER CODE END StartCanTask */
 }
@@ -780,6 +812,77 @@ void StartLidarTask(void *argument)
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
+static void can_rx_process(const CanRxMsg_t *msg)
+{
+  if (msg == NULL)
+  {
+    return;
+  }
+
+  if (msg->header.IdType != FDCAN_STANDARD_ID)
+  {
+    return;
+  }
+
+  /* 后驱电机反馈帧 0x186：解析实际线速度。 */
+  if ((msg->header.Identifier == CAN_MOTOR_FEEDBACK_ID) &&
+      (msg->header.DataLength >= FDCAN_DLC_BYTES_5))
+  {
+    uint16_t raw_speed;
+
+    raw_speed = (uint16_t)msg->data[3] |
+                (uint16_t)((uint16_t)msg->data[4] << 8U);
+
+    g_drive_motor_actual_speed_raw = raw_speed;
+    g_drive_motor_actual_speed_mps = DriveMotor_RawFeedbackToSpeed(raw_speed);
+    g_drive_motor_feedback_last_tick = osKernelGetTickCount();
+    g_drive_motor_feedback_rx_count++;
+  }
+  /* EPS 反馈帧 0x18F：解析实际转向角，并解算车辆实际横摆角速度。 */
+  else if ((msg->header.Identifier == EPS_FEEDBACK_ID) &&
+           (msg->header.DataLength >= FDCAN_DLC_BYTES_3))
+  {
+    float actual_angle_deg;
+
+    actual_angle_deg = EpsSteer_ParseFeedback(msg->data);
+
+    g_eps_actual_angle_deg = actual_angle_deg;
+    g_steer_motor_actual_angle_deg = actual_angle_deg;
+    g_eps_feedback_last_tick = osKernelGetTickCount();
+    g_eps_feedback_rx_count++;
+
+    /* 使用阿克曼模型由实际线速度和实际转向角解算车辆横摆角速度。 */
+    g_chassis_actual_angular_z = Chassis_CalcActualYawRate(
+        g_drive_motor_actual_speed_mps, actual_angle_deg);
+  }
+}
+
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
+{
+  if ((hfdcan == NULL) ||
+      (hfdcan->Instance != FDCAN1) ||
+      ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) == 0U) ||
+      (canRxQueueHandle == NULL))
+  {
+    return;
+  }
+
+  while (HAL_FDCAN_GetRxFifoFillLevel(hfdcan, FDCAN_RX_FIFO0) > 0U)
+  {
+    CanRxMsg_t rx_msg;
+
+    if (HAL_FDCAN_GetRxMessage(hfdcan,
+                               FDCAN_RX_FIFO0,
+                               &rx_msg.header,
+                               rx_msg.data) != HAL_OK)
+    {
+      break;
+    }
+
+    (void)osMessageQueuePut(canRxQueueHandle, &rx_msg, 0U, 0U);
+  }
+}
+
 
 /**
  * @brief       /stm32_ping心跳发布回调。
@@ -807,28 +910,71 @@ static void ping_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 }
 
 /**
- * @brief       /chassis_feedback底盘调试状态发布回调。
+ * @brief       /odom 里程计发布回调 (5Hz)。
  * @param       timer         : 触发本回调的 rcl 定时器
  *              last_call_time: 上一次触发时间，当前未使用
  * @retval      无
- * @note        Twist字段被复用为调试反馈：linear.x为命令线速度，linear.y为后驱目标速度，
- *              linear.z为FDCAN发送FIFO空位，angular.x为FDCAN发送错误计数，
- *              angular.y为转向目标角度，angular.z为命令角速度。
+ * @note        将实际线速度和横摆角速度积分得到位姿 (x, y, θ)，
+ *              按标准 Odometry 消息格式发布，供 Nav2 导航栈使用。
  */
-static void chassis_feedback_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
+static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 {
+  float vx = g_drive_motor_actual_speed_mps;
+  float vtheta = g_chassis_actual_angular_z;
+  uint32_t now = osKernelGetTickCount();
+  float dt;
+  float half_theta;
+
   (void)timer;
   (void)last_call_time;
 
-  /* 将当前底盘命令、执行目标和CAN诊断量打包到Twist消息中发布。 */
-  g_chassis_feedback_msg.linear.x = (double)g_chassis_cmd_linear_x;
-  g_chassis_feedback_msg.linear.y = (double)g_drive_motor_target_speed_mps;
-  g_chassis_feedback_msg.linear.z = (double)g_fdcan_tx_fifo_free_level;
-  g_chassis_feedback_msg.angular.x = (double)g_fdcan_tx_error_count;
-  g_chassis_feedback_msg.angular.y = (double)g_steer_motor_target_angle_deg;
-  g_chassis_feedback_msg.angular.z = (double)g_chassis_cmd_angular_z;
+  /* 计算时间步长 (秒)。 */
+  if (g_odom_last_tick == 0U)
+  {
+    dt = 0.02f;  /* 首次按 20ms 估算。 */
+  }
+  else
+  {
+    dt = (float)(now - g_odom_last_tick) * (1.0f / (float)osKernelGetTickFreq());
+  }
+  g_odom_last_tick = now;
 
-  if (rcl_publish(&g_chassis_feedback_publisher, &g_chassis_feedback_msg, NULL) != RCL_RET_OK)
+  /* 航迹推算: 中值法积分。 */
+  g_odom_pose_x += vx * cosf(g_odom_pose_theta + 0.5f * vtheta * dt) * dt;
+  g_odom_pose_y += vx * sinf(g_odom_pose_theta + 0.5f * vtheta * dt) * dt;
+  g_odom_pose_theta += vtheta * dt;
+
+  /* yaw -> 四元数。 */
+  half_theta = 0.5f * g_odom_pose_theta;
+
+  /* 填充标准 Odometry 消息：优先使用 Agent 同步后的ROS时间。 */
+  if (rmw_uros_epoch_synchronized())
+  {
+    int64_t time_ns = rmw_uros_epoch_nanos();
+    g_odom_msg.header.stamp.sec = (int32_t)(time_ns / 1000000000LL);
+    g_odom_msg.header.stamp.nanosec = (uint32_t)(time_ns % 1000000000LL);
+  }
+  else
+  {
+    uint32_t tick = osKernelGetTickCount();
+    g_odom_msg.header.stamp.sec = (int32_t)(tick / osKernelGetTickFreq());
+    g_odom_msg.header.stamp.nanosec = (uint32_t)((tick % osKernelGetTickFreq()) * (1000000000U / osKernelGetTickFreq()));
+  }
+  g_odom_msg.pose.pose.position.x = (double)g_odom_pose_x;
+  g_odom_msg.pose.pose.position.y = (double)g_odom_pose_y;
+  g_odom_msg.pose.pose.position.z = 0.0;
+  g_odom_msg.pose.pose.orientation.x = 0.0;
+  g_odom_msg.pose.pose.orientation.y = 0.0;
+  g_odom_msg.pose.pose.orientation.z = (double)sinf(half_theta);
+  g_odom_msg.pose.pose.orientation.w = (double)cosf(half_theta);
+  g_odom_msg.twist.twist.linear.x = (double)vx;
+  g_odom_msg.twist.twist.linear.y = 0.0;
+  g_odom_msg.twist.twist.linear.z = 0.0;
+  g_odom_msg.twist.twist.angular.x = 0.0;
+  g_odom_msg.twist.twist.angular.y = 0.0;
+  g_odom_msg.twist.twist.angular.z = (double)vtheta;
+
+  if (rcl_publish(&g_odom_publisher, &g_odom_msg, NULL) != RCL_RET_OK)
   {
     g_microros_publish_fail_count++;
     rcl_reset_error();
@@ -855,4 +1001,3 @@ static void cmd_vel_callback(const void *msgin)
   }
 }
 /* USER CODE END Application */
-

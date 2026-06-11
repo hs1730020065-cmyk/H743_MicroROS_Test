@@ -12,8 +12,20 @@
 
 /* EPS 控制命令帧 ID。 */
 #define EPS_CMD_ID       0x314U
-/* EPS 反馈帧 ID，当前仅保留占位，后续接收解析时使用。 */
-#define EPS_FEEDBACK_ID  0x18FU
+
+/*
+ * EPS 执行器角度 -> 车轮转角的减速比。
+ * 实测数据：车轮 10°=EPS 122, 20°=237, 30°=345，比值约 12.0。
+ */
+#define EPS_STEERING_RATIO          12.0f
+
+/* EPS 角度单位：1°/bit（命令帧和反馈帧一致）。 */
+#define EPS_FEEDBACK_ANGLE_SCALE    1.0f
+
+/* 全局反馈状态变量。 */
+volatile float g_eps_actual_angle_deg = 0.0f;
+volatile uint32_t g_eps_feedback_rx_count = 0U;
+volatile uint32_t g_eps_feedback_last_tick = 0U;
 
 /* 发送 8 字节 EPS 控制帧，并同步更新 FDCAN 发送诊断计数。 */
 static HAL_StatusTypeDef EpsSteer_SendFrame(uint8_t data[8])
@@ -30,9 +42,6 @@ static HAL_StatusTypeDef EpsSteer_SendFrame(uint8_t data[8])
   txHeader.FDFormat = FDCAN_CLASSIC_CAN;
   txHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
   txHeader.MessageMarker = 0;
-
-  /* 当前还未接收 EPS 反馈帧，先避免未使用宏告警。 */
-  (void)EPS_FEEDBACK_ID;
 
   status = HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &txHeader, data);
   g_fdcan_tx_request_count++;
@@ -51,10 +60,17 @@ static HAL_StatusTypeDef EpsSteer_SendFrame(uint8_t data[8])
   return status;
 }
 
-HAL_StatusTypeDef EpsSteer_SendTargetAngle(int16_t angle_deg)
+HAL_StatusTypeDef EpsSteer_SendTargetAngle(int16_t road_wheel_deg)
 {
   uint8_t data[8] = {0};
-  uint16_t raw = (uint16_t)angle_deg;
+  float eps_float;
+  int16_t eps_raw;
+  uint16_t raw;
+
+  /* 车轮转角 -> EPS 执行器角度。 */
+  eps_float = (float)road_wheel_deg * EPS_STEERING_RATIO;
+  eps_raw = (int16_t)(eps_float + (eps_float >= 0.0f ? 0.5f : -0.5f));
+  raw = (uint16_t)eps_raw;
 
   /* 协议使用大端方式发送目标角度，data[0] 为角度控制命令字。 */
   data[0] = 0x01U;
@@ -74,4 +90,34 @@ HAL_StatusTypeDef EpsSteer_SetManualMode(void)
 HAL_StatusTypeDef EpsSteer_SetZero(void)
 {
   return EpsSteer_SendTargetAngle(0);
+}
+
+/**
+ * @brief       从 EPS 反馈帧 (0x18F) 中解析实际车轮转角
+ * @param       data: 8 字节 CAN 数据载荷
+ * @retval      实际车轮转角，单位：度（deg）
+ *              正值 = 右转（EPS 协议方向）
+ *              负值 = 左转（EPS 协议方向）
+ * @note        data[1:2] 为大端 int16，单位 1°/bit（EPS 执行器角度），
+ *              除以 EPS_STEERING_RATIO 换算为车轮转角。
+ */
+float EpsSteer_ParseFeedback(const uint8_t data[8])
+{
+  int16_t eps_raw;
+  float eps_angle_deg;
+  float road_wheel_deg;
+
+  if (data == NULL)
+  {
+    return 0.0f;
+  }
+
+  /* 大端 int16: data[1] 为高字节，data[2] 为低字节，1°/bit。 */
+  eps_raw = (int16_t)(((uint16_t)data[1] << 8U) | (uint16_t)data[2]);
+  eps_angle_deg = (float)eps_raw * EPS_FEEDBACK_ANGLE_SCALE;
+
+  /* EPS 执行器角度 -> 车轮转角。 */
+  road_wheel_deg = eps_angle_deg / EPS_STEERING_RATIO;
+
+  return road_wheel_deg;
 }

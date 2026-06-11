@@ -23,7 +23,13 @@ typedef struct
 } AckermannTarget_t;
 
 extern volatile float g_drive_motor_target_speed_mps;
+extern volatile float g_drive_motor_actual_speed_mps;
+extern volatile uint16_t g_drive_motor_actual_speed_raw;
+extern volatile uint32_t g_drive_motor_feedback_rx_count;
+extern volatile uint32_t g_drive_motor_feedback_last_tick;
 extern volatile float g_steer_motor_target_angle_deg;
+extern volatile float g_steer_motor_actual_angle_deg;
+extern volatile float g_chassis_actual_angular_z;
 extern volatile HAL_StatusTypeDef g_drive_motor_can_status;
 extern volatile HAL_StatusTypeDef g_steer_motor_can_status;
 
@@ -51,12 +57,24 @@ void Chassis_ControlFromCmdVel(float linear_x, float angular_z);
  */
 void DriveMotor_SetSpeed(float speed_mps);
 
+float DriveMotor_RawFeedbackToSpeed(uint16_t raw_speed);
+
 /**
  * @brief       设置前轮转向电机目标角度
  * @param       angle_deg: 前轮目标转向角，单位：度（deg）
  * @retval      无
  */
 void SteerMotor_SetAngle(float angle_deg);
+
+/**
+ * @brief       根据实际线速度和转向角计算车辆实际横摆角速度（阿克曼模型）
+ * @param       linear_x_mps : 车辆实际纵向线速度，单位：米/秒（m/s）
+ *              steer_angle_deg: 实际前轮转向角，单位：度（deg）
+ * @retval      车辆绕 Z 轴的实际角速度，单位：弧度/秒（rad/s）
+ *              正值 = 左转（ROS 坐标系），负值 = 右转
+ * @note        ω = v * tan(δ) / L，方向取反以匹配 ROS 坐标系。
+ */
+float Chassis_CalcActualYawRate(float linear_x_mps, float steer_angle_deg);
 
 #ifdef __cplusplus
 }

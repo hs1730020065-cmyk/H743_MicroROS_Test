@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python D:/STM32Project/H743_MicroROS_Test/.claude/export_transcript.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

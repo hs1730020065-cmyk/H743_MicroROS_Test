@@ -25,6 +25,19 @@ HAL_StatusTypeDef EpsSteer_SetManualMode(void);
 /* 将 EPS 目标转向角设置为 0 度。 */
 HAL_StatusTypeDef EpsSteer_SetZero(void);
 
+/* EPS 反馈帧 ID (0x18F)。 */
+#define EPS_FEEDBACK_ID  0x18FU
+
+/* 从 0x18F 反馈帧中解析实际转向角，单位：度。 */
+float EpsSteer_ParseFeedback(const uint8_t data[8]);
+
+/* EPS 最近一次反馈的实际转向角，单位：度，供底盘解算使用。 */
+extern volatile float g_eps_actual_angle_deg;
+/* EPS 反馈帧接收计数，用于诊断。 */
+extern volatile uint32_t g_eps_feedback_rx_count;
+/* EPS 反馈帧最近一次接收时的系统 tick。 */
+extern volatile uint32_t g_eps_feedback_last_tick;
+
 #ifdef __cplusplus
 }
 #endif
