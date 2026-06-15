@@ -4108,7 +4108,7 @@ void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef* fdcanHandle)
   * @param  None
   * @retval None
   */
-void MX_FREERTOS_Init(void) {
+void MX_FREERTOS_Init(void) {      /* FreeRTOS 初始化函数：由 main.c 在调度器启动前调用 */
  8001f7c:	b580      	push	{r7, lr}
  8001f7e:	af00      	add	r7, sp, #0
   /* 当前没有创建CMSIS-OS定时器；micro-ROS定时器在defaultTask内初始化。 */
@@ -4116,7 +4116,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of canRxQueue */
-  canRxQueueHandle = osMessageQueueNew (32, sizeof(CanRxMsg_t), &canRxQueue_attributes);
+  canRxQueueHandle = osMessageQueueNew (32, sizeof(CanRxMsg_t), &canRxQueue_attributes); /* 创建 CAN 接收队列：容量 32，元素大小 = CanRxMsg_t */
  8001f80:	4a30      	ldr	r2, [pc, #192]	@ (8002044 <MX_FREERTOS_Init+0xc8>)
  8001f82:	2130      	movs	r1, #48	@ 0x30
  8001f84:	2020      	movs	r0, #32
@@ -4126,7 +4126,7 @@ void MX_FREERTOS_Init(void) {
  8001f8e:	6013      	str	r3, [r2, #0]
 
   /* creation of cmdVelQueue */
-  cmdVelQueueHandle = osMessageQueueNew (4, sizeof(uint32_t), &cmdVelQueue_attributes);
+  cmdVelQueueHandle = osMessageQueueNew (4, sizeof(uint32_t), &cmdVelQueue_attributes);  /* 创建 /cmd_vel 队列：容量 4，元素大小 = uint32_t（预留） */
  8001f90:	4a2e      	ldr	r2, [pc, #184]	@ (800204c <MX_FREERTOS_Init+0xd0>)
  8001f92:	2104      	movs	r1, #4
  8001f94:	2004      	movs	r0, #4
@@ -4136,7 +4136,7 @@ void MX_FREERTOS_Init(void) {
  8001f9e:	6013      	str	r3, [r2, #0]
 
   /* creation of sbusQueue */
-  sbusQueueHandle = osMessageQueueNew (4, sizeof(uint32_t), &sbusQueue_attributes);
+  sbusQueueHandle = osMessageQueueNew (4, sizeof(uint32_t), &sbusQueue_attributes);      /* 创建 SBUS 队列：容量 4，元素大小 = uint32_t（预留） */
  8001fa0:	4a2c      	ldr	r2, [pc, #176]	@ (8002054 <MX_FREERTOS_Init+0xd8>)
  8001fa2:	2104      	movs	r1, #4
  8001fa4:	2004      	movs	r0, #4
@@ -4149,7 +4149,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);   /* 创建 micro-ROS 主通信线程 */
  8001fb0:	4a2a      	ldr	r2, [pc, #168]	@ (800205c <MX_FREERTOS_Init+0xe0>)
  8001fb2:	2100      	movs	r1, #0
  8001fb4:	482a      	ldr	r0, [pc, #168]	@ (8002060 <MX_FREERTOS_Init+0xe4>)
@@ -4159,7 +4159,7 @@ void MX_FREERTOS_Init(void) {
  8001fbe:	6013      	str	r3, [r2, #0]
 
   /* creation of controlTask */
-  controlTaskHandle = osThreadNew(StartControlTask, NULL, &controlTask_attributes);
+  controlTaskHandle = osThreadNew(StartControlTask, NULL, &controlTask_attributes);   /* 创建 10ms 底盘控制线程 */
  8001fc0:	4a29      	ldr	r2, [pc, #164]	@ (8002068 <MX_FREERTOS_Init+0xec>)
  8001fc2:	2100      	movs	r1, #0
  8001fc4:	4829      	ldr	r0, [pc, #164]	@ (800206c <MX_FREERTOS_Init+0xf0>)
@@ -4169,7 +4169,7 @@ void MX_FREERTOS_Init(void) {
  8001fce:	6013      	str	r3, [r2, #0]
 
   /* creation of canTask */
-  canTaskHandle = osThreadNew(StartCanTask, NULL, &canTask_attributes);
+  canTaskHandle = osThreadNew(StartCanTask, NULL, &canTask_attributes);               /* 创建 CAN 后台处理线程 */
  8001fd0:	4a28      	ldr	r2, [pc, #160]	@ (8002074 <MX_FREERTOS_Init+0xf8>)
  8001fd2:	2100      	movs	r1, #0
  8001fd4:	4828      	ldr	r0, [pc, #160]	@ (8002078 <MX_FREERTOS_Init+0xfc>)
@@ -4179,7 +4179,7 @@ void MX_FREERTOS_Init(void) {
  8001fde:	6013      	str	r3, [r2, #0]
 
   /* creation of encoderTask */
-  encoderTaskHandle = osThreadNew(StartEncoderTask, NULL, &encoderTask_attributes);
+  encoderTaskHandle = osThreadNew(StartEncoderTask, NULL, &encoderTask_attributes);   /* 创建编码器采集线程（预留） */
  8001fe0:	4a27      	ldr	r2, [pc, #156]	@ (8002080 <MX_FREERTOS_Init+0x104>)
  8001fe2:	2100      	movs	r1, #0
  8001fe4:	4827      	ldr	r0, [pc, #156]	@ (8002084 <MX_FREERTOS_Init+0x108>)
@@ -4189,7 +4189,7 @@ void MX_FREERTOS_Init(void) {
  8001fee:	6013      	str	r3, [r2, #0]
 
   /* creation of imuTask */
-  imuTaskHandle = osThreadNew(StartImuTask, NULL, &imuTask_attributes);
+  imuTaskHandle = osThreadNew(StartImuTask, NULL, &imuTask_attributes);               /* 创建 IMU 姿态采集线程 */
  8001ff0:	4a26      	ldr	r2, [pc, #152]	@ (800208c <MX_FREERTOS_Init+0x110>)
  8001ff2:	2100      	movs	r1, #0
  8001ff4:	4826      	ldr	r0, [pc, #152]	@ (8002090 <MX_FREERTOS_Init+0x114>)
@@ -4199,7 +4199,7 @@ void MX_FREERTOS_Init(void) {
  8001ffe:	6013      	str	r3, [r2, #0]
 
   /* creation of sbusTask */
-  sbusTaskHandle = osThreadNew(StartSbusTask, NULL, &sbusTask_attributes);
+  sbusTaskHandle = osThreadNew(StartSbusTask, NULL, &sbusTask_attributes);            /* 创建 SBUS 遥控接收线程 */
  8002000:	4a25      	ldr	r2, [pc, #148]	@ (8002098 <MX_FREERTOS_Init+0x11c>)
  8002002:	2100      	movs	r1, #0
  8002004:	4825      	ldr	r0, [pc, #148]	@ (800209c <MX_FREERTOS_Init+0x120>)
@@ -4209,7 +4209,7 @@ void MX_FREERTOS_Init(void) {
  800200e:	6013      	str	r3, [r2, #0]
 
   /* creation of batteryTask */
-  batteryTaskHandle = osThreadNew(StartBatteryTask, NULL, &batteryTask_attributes);
+  batteryTaskHandle = osThreadNew(StartBatteryTask, NULL, &batteryTask_attributes);   /* 创建电池监测线程（预留） */
  8002010:	4a24      	ldr	r2, [pc, #144]	@ (80020a4 <MX_FREERTOS_Init+0x128>)
  8002012:	2100      	movs	r1, #0
  8002014:	4824      	ldr	r0, [pc, #144]	@ (80020a8 <MX_FREERTOS_Init+0x12c>)
@@ -4219,7 +4219,7 @@ void MX_FREERTOS_Init(void) {
  800201e:	6013      	str	r3, [r2, #0]
 
   /* creation of gpsTask */
-  gpsTaskHandle = osThreadNew(StartGpsTask, NULL, &gpsTask_attributes);
+  gpsTaskHandle = osThreadNew(StartGpsTask, NULL, &gpsTask_attributes);               /* 创建 GPS 定位线程（预留） */
  8002020:	4a23      	ldr	r2, [pc, #140]	@ (80020b0 <MX_FREERTOS_Init+0x134>)
  8002022:	2100      	movs	r1, #0
  8002024:	4823      	ldr	r0, [pc, #140]	@ (80020b4 <MX_FREERTOS_Init+0x138>)
@@ -4229,7 +4229,7 @@ void MX_FREERTOS_Init(void) {
  800202e:	6013      	str	r3, [r2, #0]
 
   /* creation of lidarTask */
-  lidarTaskHandle = osThreadNew(StartLidarTask, NULL, &lidarTask_attributes);
+  lidarTaskHandle = osThreadNew(StartLidarTask, NULL, &lidarTask_attributes);         /* 创建激光雷达线程（预留） */
  8002030:	4a22      	ldr	r2, [pc, #136]	@ (80020bc <MX_FREERTOS_Init+0x140>)
  8002032:	2100      	movs	r1, #0
  8002034:	4822      	ldr	r0, [pc, #136]	@ (80020c0 <MX_FREERTOS_Init+0x144>)
@@ -4291,10 +4291,10 @@ void StartDefaultTask(void *argument)
  80020cc:	af02      	add	r7, sp, #8
  80020ce:	6078      	str	r0, [r7, #4]
   /* USER CODE BEGIN StartDefaultTask */
-  (void) argument;
+  (void) argument;   /* 消除"未使用参数"编译器警告 */
 
   /* micro-ROS使用UART1上的自定义传输函数连接agent。 */
-  rmw_uros_set_custom_transport(
+  rmw_uros_set_custom_transport(    /* 设置 micro-ROS 自定义传输层：通过 UART1 与 Agent 通信 */
  80020d0:	4ba9      	ldr	r3, [pc, #676]	@ (8002378 <StartDefaultTask+0x2b0>)
  80020d2:	9301      	str	r3, [sp, #4]
  80020d4:	4ba9      	ldr	r3, [pc, #676]	@ (800237c <StartDefaultTask+0x2b4>)
@@ -4304,30 +4304,30 @@ void StartDefaultTask(void *argument)
  80020dc:	49aa      	ldr	r1, [pc, #680]	@ (8002388 <StartDefaultTask+0x2c0>)
  80020de:	2001      	movs	r0, #1
  80020e0:	f017 f902 	bl	80192e8 <rmw_uros_set_custom_transport>
-  cubemx_transport_close,
-  cubemx_transport_write,
-  cubemx_transport_read);
+  cubemx_transport_close,           /* 参数4 close: 传输关闭回调函数指针 */
+  cubemx_transport_write,           /* 参数5 write: 传输写回调函数指针（阻塞发送） */
+  cubemx_transport_read);           /* 参数6 read: 传输读回调函数指针（带超时接收） */
 
   /* 将micro-ROS内存分配切换到工程提供的FreeRTOS分配器。 */
-  rcl_allocator_t freeRTOS_allocator = rcutils_get_zero_initialized_allocator();
+  rcl_allocator_t freeRTOS_allocator = rcutils_get_zero_initialized_allocator(); /* 获取一个全零初始化的分配器结构体 */
  80020e4:	f107 0320 	add.w	r3, r7, #32
  80020e8:	4618      	mov	r0, r3
  80020ea:	f017 f831 	bl	8019150 <rcutils_get_zero_initialized_allocator>
 
-  freeRTOS_allocator.allocate = microros_allocate;
+  freeRTOS_allocator.allocate = microros_allocate;           /* 绑定内存分配函数：调用 pvPortMalloc */
  80020ee:	4ba7      	ldr	r3, [pc, #668]	@ (800238c <StartDefaultTask+0x2c4>)
  80020f0:	623b      	str	r3, [r7, #32]
-  freeRTOS_allocator.deallocate = microros_deallocate;
+  freeRTOS_allocator.deallocate = microros_deallocate;       /* 绑定内存释放函数：调用 vPortFree */
  80020f2:	4ba7      	ldr	r3, [pc, #668]	@ (8002390 <StartDefaultTask+0x2c8>)
  80020f4:	627b      	str	r3, [r7, #36]	@ 0x24
-  freeRTOS_allocator.reallocate = microros_reallocate;
+  freeRTOS_allocator.reallocate = microros_reallocate;       /* 绑定内存重分配函数：malloc + memcpy + free */
  80020f6:	4ba7      	ldr	r3, [pc, #668]	@ (8002394 <StartDefaultTask+0x2cc>)
  80020f8:	62bb      	str	r3, [r7, #40]	@ 0x28
-  freeRTOS_allocator.zero_allocate = microros_zero_allocate;
+  freeRTOS_allocator.zero_allocate = microros_zero_allocate; /* 绑定零初始化分配函数：calloc 等效实现 */
  80020fa:	4ba7      	ldr	r3, [pc, #668]	@ (8002398 <StartDefaultTask+0x2d0>)
  80020fc:	62fb      	str	r3, [r7, #44]	@ 0x2c
 
-  if (!rcutils_set_default_allocator(&freeRTOS_allocator))
+  if (!rcutils_set_default_allocator(&freeRTOS_allocator))   /* 将自定义分配器设为 ROS2 全局默认分配器 */
  80020fe:	f107 0320 	add.w	r3, r7, #32
  8002102:	4618      	mov	r0, r3
  8002104:	f017 f832 	bl	801916c <rcutils_set_default_allocator>
@@ -4337,33 +4337,33 @@ void StartDefaultTask(void *argument)
  8002110:	2b00      	cmp	r3, #0
  8002112:	d004      	beq.n	800211e <StartDefaultTask+0x56>
   {
-    for (;;)
+    for (;;)           /* 分配器设置失败 → 死循环卡死（系统级错误，无法恢复） */
     {
-      osDelay(1000U);
+      osDelay(1000U);  /* 每 1000 tick (1秒) 空转一次，降低功耗 */
  8002114:	f44f 707a 	mov.w	r0, #1000	@ 0x3e8
  8002118:	f010 fbfe 	bl	8012918 <osDelay>
  800211c:	e7fa      	b.n	8002114 <StartDefaultTask+0x4c>
     }
   }
 
-  rcl_allocator_t allocator = rcl_get_default_allocator();
+  rcl_allocator_t allocator = rcl_get_default_allocator(); /* 获取当前默认分配器的副本，供后续 rcl API 使用 */
  800211e:	f107 030c 	add.w	r3, r7, #12
  8002122:	4618      	mov	r0, r3
  8002124:	f017 f840 	bl	80191a8 <rcutils_get_default_allocator>
-  static rcl_timer_t ping_timer;
-  static rcl_timer_t odom_timer;
-  static rclc_executor_t executor;
+  static rcl_timer_t ping_timer;               /* /stm32_ping 定时器对象（200ms 周期） */
+  static rcl_timer_t odom_timer;               /* /odom 定时器对象（200ms 周期，即 5Hz） */
+  static rclc_executor_t executor;             /* rclc executor 对象：单线程驱动所有回调和定时器 */
 
   /* 以下micro-ROS对象初始化失败时会清除错误并等待重试。 */
-  while (rclc_support_init(&support, 0, NULL, &allocator) != RCL_RET_OK)
+  while (rclc_support_init(&support, 0, NULL, &allocator) != RCL_RET_OK) /* 初始化 rclc 支持层（context=0 使用默认） */
  8002128:	e005      	b.n	8002136 <StartDefaultTask+0x6e>
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除 rcl 错误状态，防止后续 API 因残留错误而失败 */
  800212a:	f017 f871 	bl	8019210 <rcutils_reset_error>
-    osDelay(500U);
+    osDelay(500U);       /* 等待 500 tick (500ms) 后重试 */
  800212e:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
  8002132:	f010 fbf1 	bl	8012918 <osDelay>
-  while (rclc_support_init(&support, 0, NULL, &allocator) != RCL_RET_OK)
+  while (rclc_support_init(&support, 0, NULL, &allocator) != RCL_RET_OK) /* 初始化 rclc 支持层（context=0 使用默认） */
  8002136:	f107 030c 	add.w	r3, r7, #12
  800213a:	2200      	movs	r2, #0
  800213c:	2100      	movs	r1, #0
@@ -4374,15 +4374,15 @@ void StartDefaultTask(void *argument)
  8002148:	d1ef      	bne.n	800212a <StartDefaultTask+0x62>
   }
 
-  while (rclc_node_init_default(&node, "stm32_h743_node", "", &support) != RCL_RET_OK)
+  while (rclc_node_init_default(&node, "stm32_h743_node", "", &support) != RCL_RET_OK) /* 创建默认节点 */
  800214a:	e005      	b.n	8002158 <StartDefaultTask+0x90>
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除错误状态 */
  800214c:	f017 f860 	bl	8019210 <rcutils_reset_error>
-    osDelay(500U);
+    osDelay(500U);       /* 500ms 后重试 */
  8002150:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
  8002154:	f010 fbe0 	bl	8012918 <osDelay>
-  while (rclc_node_init_default(&node, "stm32_h743_node", "", &support) != RCL_RET_OK)
+  while (rclc_node_init_default(&node, "stm32_h743_node", "", &support) != RCL_RET_OK) /* 创建默认节点 */
  8002158:	4b90      	ldr	r3, [pc, #576]	@ (800239c <StartDefaultTask+0x2d4>)
  800215a:	4a91      	ldr	r2, [pc, #580]	@ (80023a0 <StartDefaultTask+0x2d8>)
  800215c:	4991      	ldr	r1, [pc, #580]	@ (80023a4 <StartDefaultTask+0x2dc>)
@@ -4393,19 +4393,19 @@ void StartDefaultTask(void *argument)
  8002168:	d1f0      	bne.n	800214c <StartDefaultTask+0x84>
   }
 
-  while (rclc_publisher_init_default(
+  while (rclc_publisher_init_default(    /* 初始化 /stm32_ping 发布器（Int32 类型） */
  800216a:	e005      	b.n	8002178 <StartDefaultTask+0xb0>
-  &g_ping_publisher,
-  &node,
-  ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-  "/stm32_ping") != RCL_RET_OK)
+  &g_ping_publisher,                     /* 发布器对象指针 */
+  &node,                                 /* 所属节点 */
+  ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), /* 消息类型支持（由代码生成器提供） */
+  "/stm32_ping") != RCL_RET_OK)          /* 主题名称：/stm32_ping */
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除错误状态 */
  800216c:	f017 f850 	bl	8019210 <rcutils_reset_error>
-    osDelay(500U);
+    osDelay(500U);       /* 500ms 后重试 */
  8002170:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
  8002174:	f010 fbd0 	bl	8012918 <osDelay>
-  while (rclc_publisher_init_default(
+  while (rclc_publisher_init_default(    /* 初始化 /stm32_ping 发布器（Int32 类型） */
  8002178:	f017 fe4a 	bl	8019e10 <rosidl_typesupport_c__get_message_type_support_handle__std_msgs__msg__Int32>
  800217c:	4602      	mov	r2, r0
  800217e:	4b8b      	ldr	r3, [pc, #556]	@ (80023ac <StartDefaultTask+0x2e4>)
@@ -4413,24 +4413,24 @@ void StartDefaultTask(void *argument)
  8002182:	488b      	ldr	r0, [pc, #556]	@ (80023b0 <StartDefaultTask+0x2e8>)
  8002184:	f016 ff38 	bl	8018ff8 <rclc_publisher_init_default>
  8002188:	4603      	mov	r3, r0
-  "/stm32_ping") != RCL_RET_OK)
+  "/stm32_ping") != RCL_RET_OK)          /* 主题名称：/stm32_ping */
  800218a:	2b00      	cmp	r3, #0
  800218c:	d1ee      	bne.n	800216c <StartDefaultTask+0xa4>
   }
 
-  while (rclc_publisher_init_default(
+  while (rclc_publisher_init_default(    /* 初始化 /odom 发布器（Odometry 类型） */
  800218e:	e005      	b.n	800219c <StartDefaultTask+0xd4>
-  &g_odom_publisher,
-  &node,
-  ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry),
-  "/odom") != RCL_RET_OK)
+  &g_odom_publisher,                     /* 发布器对象指针 */
+  &node,                                 /* 所属节点 */
+  ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), /* 消息类型支持 */
+  "/odom") != RCL_RET_OK)               /* 主题名称：/odom */
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除错误状态 */
  8002190:	f017 f83e 	bl	8019210 <rcutils_reset_error>
-    osDelay(500U);
+    osDelay(500U);       /* 500ms 后重试 */
  8002194:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
  8002198:	f010 fbbe 	bl	8012918 <osDelay>
-  while (rclc_publisher_init_default(
+  while (rclc_publisher_init_default(    /* 初始化 /odom 发布器（Odometry 类型） */
  800219c:	f015 fe2e 	bl	8017dfc <rosidl_typesupport_c__get_message_type_support_handle__nav_msgs__msg__Odometry>
  80021a0:	4602      	mov	r2, r0
  80021a2:	4b84      	ldr	r3, [pc, #528]	@ (80023b4 <StartDefaultTask+0x2ec>)
@@ -4438,24 +4438,24 @@ void StartDefaultTask(void *argument)
  80021a6:	4884      	ldr	r0, [pc, #528]	@ (80023b8 <StartDefaultTask+0x2f0>)
  80021a8:	f016 ff26 	bl	8018ff8 <rclc_publisher_init_default>
  80021ac:	4603      	mov	r3, r0
-  "/odom") != RCL_RET_OK)
+  "/odom") != RCL_RET_OK)               /* 主题名称：/odom */
  80021ae:	2b00      	cmp	r3, #0
  80021b0:	d1ee      	bne.n	8002190 <StartDefaultTask+0xc8>
   }
 
-  while (rclc_subscription_init_default(
+  while (rclc_subscription_init_default( /* 初始化 /cmd_vel 订阅器（Twist 类型） */
  80021b2:	e005      	b.n	80021c0 <StartDefaultTask+0xf8>
-  &cmd_vel_subscriber,
-  &node,
-  ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
-  "/cmd_vel") != RCL_RET_OK)
+  &cmd_vel_subscriber,                   /* 订阅器对象指针 */
+  &node,                                 /* 所属节点 */
+  ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), /* 消息类型支持 */
+  "/cmd_vel") != RCL_RET_OK)             /* 主题名称：/cmd_vel */
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除错误状态 */
  80021b4:	f017 f82c 	bl	8019210 <rcutils_reset_error>
-    osDelay(500U);
+    osDelay(500U);       /* 500ms 后重试 */
  80021b8:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
  80021bc:	f010 fbac 	bl	8012918 <osDelay>
-  while (rclc_subscription_init_default(
+  while (rclc_subscription_init_default( /* 初始化 /cmd_vel 订阅器（Twist 类型） */
  80021c0:	f014 f94c 	bl	801645c <rosidl_typesupport_c__get_message_type_support_handle__geometry_msgs__msg__Twist>
  80021c4:	4602      	mov	r2, r0
  80021c6:	4b7d      	ldr	r3, [pc, #500]	@ (80023bc <StartDefaultTask+0x2f4>)
@@ -4463,85 +4463,85 @@ void StartDefaultTask(void *argument)
  80021ca:	487d      	ldr	r0, [pc, #500]	@ (80023c0 <StartDefaultTask+0x2f8>)
  80021cc:	f016 ff4e 	bl	801906c <rclc_subscription_init_default>
  80021d0:	4603      	mov	r3, r0
-  "/cmd_vel") != RCL_RET_OK)
+  "/cmd_vel") != RCL_RET_OK)             /* 主题名称：/cmd_vel */
  80021d2:	2b00      	cmp	r3, #0
  80021d4:	d1ee      	bne.n	80021b4 <StartDefaultTask+0xec>
   }
 
-  g_ping_msg.data = 0;
+  g_ping_msg.data = 0;       /* 心跳计数器初始化为 0 */
  80021d6:	4b7b      	ldr	r3, [pc, #492]	@ (80023c4 <StartDefaultTask+0x2fc>)
  80021d8:	2200      	movs	r2, #0
  80021da:	601a      	str	r2, [r3, #0]
-  cmd_vel_msg.linear.x = 0.0;
+  cmd_vel_msg.linear.x = 0.0;  /* /cmd_vel 线速度 X 分量初始化为 0 */
  80021dc:	497a      	ldr	r1, [pc, #488]	@ (80023c8 <StartDefaultTask+0x300>)
  80021de:	f04f 0200 	mov.w	r2, #0
  80021e2:	f04f 0300 	mov.w	r3, #0
  80021e6:	e9c1 2300 	strd	r2, r3, [r1]
-  cmd_vel_msg.linear.y = 0.0;
+  cmd_vel_msg.linear.y = 0.0;  /* /cmd_vel 线速度 Y 分量初始化为 0（本项目不使用） */
  80021ea:	4977      	ldr	r1, [pc, #476]	@ (80023c8 <StartDefaultTask+0x300>)
  80021ec:	f04f 0200 	mov.w	r2, #0
  80021f0:	f04f 0300 	mov.w	r3, #0
  80021f4:	e9c1 2302 	strd	r2, r3, [r1, #8]
-  cmd_vel_msg.linear.z = 0.0;
+  cmd_vel_msg.linear.z = 0.0;  /* /cmd_vel 线速度 Z 分量初始化为 0（本项目不使用） */
  80021f8:	4973      	ldr	r1, [pc, #460]	@ (80023c8 <StartDefaultTask+0x300>)
  80021fa:	f04f 0200 	mov.w	r2, #0
  80021fe:	f04f 0300 	mov.w	r3, #0
  8002202:	e9c1 2304 	strd	r2, r3, [r1, #16]
-  cmd_vel_msg.angular.x = 0.0;
+  cmd_vel_msg.angular.x = 0.0; /* /cmd_vel 角速度 X 分量初始化为 0（本项目不使用） */
  8002206:	4970      	ldr	r1, [pc, #448]	@ (80023c8 <StartDefaultTask+0x300>)
  8002208:	f04f 0200 	mov.w	r2, #0
  800220c:	f04f 0300 	mov.w	r3, #0
  8002210:	e9c1 2306 	strd	r2, r3, [r1, #24]
-  cmd_vel_msg.angular.y = 0.0;
+  cmd_vel_msg.angular.y = 0.0; /* /cmd_vel 角速度 Y 分量初始化为 0（本项目不使用） */
  8002214:	496c      	ldr	r1, [pc, #432]	@ (80023c8 <StartDefaultTask+0x300>)
  8002216:	f04f 0200 	mov.w	r2, #0
  800221a:	f04f 0300 	mov.w	r3, #0
  800221e:	e9c1 2308 	strd	r2, r3, [r1, #32]
-  cmd_vel_msg.angular.z = 0.0;
+  cmd_vel_msg.angular.z = 0.0; /* /cmd_vel 角速度 Z 分量初始化为 0 */
  8002222:	4969      	ldr	r1, [pc, #420]	@ (80023c8 <StartDefaultTask+0x300>)
  8002224:	f04f 0200 	mov.w	r2, #0
  8002228:	f04f 0300 	mov.w	r3, #0
  800222c:	e9c1 230a 	strd	r2, r3, [r1, #40]	@ 0x28
 
   /* 里程计消息初始化。 */
-  g_odom_msg.header.frame_id.data = (char *)"odom";
+  g_odom_msg.header.frame_id.data = (char *)"odom";        /* 里程计 frame_id 设为 "odom"（世界坐标系） */
  8002230:	4b66      	ldr	r3, [pc, #408]	@ (80023cc <StartDefaultTask+0x304>)
  8002232:	4a67      	ldr	r2, [pc, #412]	@ (80023d0 <StartDefaultTask+0x308>)
  8002234:	609a      	str	r2, [r3, #8]
-  g_odom_msg.header.frame_id.size = 4;
+  g_odom_msg.header.frame_id.size = 4;                      /* frame_id 字符串当前有效长度 = 4（"odom" 不含 '\0'） */
  8002236:	4b65      	ldr	r3, [pc, #404]	@ (80023cc <StartDefaultTask+0x304>)
  8002238:	2204      	movs	r2, #4
  800223a:	60da      	str	r2, [r3, #12]
-  g_odom_msg.header.frame_id.capacity = 5;
+  g_odom_msg.header.frame_id.capacity = 5;                  /* frame_id 字符串缓冲区容量 = 5（预留 '\0' 位置） */
  800223c:	4b63      	ldr	r3, [pc, #396]	@ (80023cc <StartDefaultTask+0x304>)
  800223e:	2205      	movs	r2, #5
  8002240:	611a      	str	r2, [r3, #16]
-  g_odom_msg.child_frame_id.data = (char *)"base_link";
+  g_odom_msg.child_frame_id.data = (char *)"base_link";     /* 子坐标系设为 "base_link"（机器人基座坐标系） */
  8002242:	4b62      	ldr	r3, [pc, #392]	@ (80023cc <StartDefaultTask+0x304>)
  8002244:	4a63      	ldr	r2, [pc, #396]	@ (80023d4 <StartDefaultTask+0x30c>)
  8002246:	615a      	str	r2, [r3, #20]
-  g_odom_msg.child_frame_id.size = 9;
+  g_odom_msg.child_frame_id.size = 9;                       /* child_frame_id 字符串有效长度 = 9 */
  8002248:	4b60      	ldr	r3, [pc, #384]	@ (80023cc <StartDefaultTask+0x304>)
  800224a:	2209      	movs	r2, #9
  800224c:	619a      	str	r2, [r3, #24]
-  g_odom_msg.child_frame_id.capacity = 10;
+  g_odom_msg.child_frame_id.capacity = 10;                  /* child_frame_id 字符串缓冲区容量 = 10 */
  800224e:	4b5f      	ldr	r3, [pc, #380]	@ (80023cc <StartDefaultTask+0x304>)
  8002250:	220a      	movs	r2, #10
  8002252:	61da      	str	r2, [r3, #28]
 
-  while (rclc_timer_init_default(
+  while (rclc_timer_init_default(    /* 初始化 ping 定时器（200ms 周期 = 5Hz） */
  8002254:	e005      	b.n	8002262 <StartDefaultTask+0x19a>
-  &ping_timer,
-  &support,
-  RCL_MS_TO_NS(200),
-  ping_timer_callback) != RCL_RET_OK)
+  &ping_timer,                        /* 定时器对象指针 */
+  &support,                           /* rclc 支持对象 */
+  RCL_MS_TO_NS(200),                  /* 周期：200ms 转换为纳秒（200,000,000 ns） */
+  ping_timer_callback) != RCL_RET_OK) /* 定时器到期时调用的回调函数 */
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除错误状态 */
  8002256:	f016 ffdb 	bl	8019210 <rcutils_reset_error>
-    osDelay(500U);
+    osDelay(500U);       /* 500ms 后重试 */
  800225a:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
  800225e:	f010 fb5b 	bl	8012918 <osDelay>
-  while (rclc_timer_init_default(
+  while (rclc_timer_init_default(    /* 初始化 ping 定时器（200ms 周期 = 5Hz） */
  8002262:	4b5d      	ldr	r3, [pc, #372]	@ (80023d8 <StartDefaultTask+0x310>)
  8002264:	9300      	str	r3, [sp, #0]
  8002266:	a340      	add	r3, pc, #256	@ (adr r3, 8002368 <StartDefaultTask+0x2a0>)
@@ -4550,24 +4550,24 @@ void StartDefaultTask(void *argument)
  800226e:	485b      	ldr	r0, [pc, #364]	@ (80023dc <StartDefaultTask+0x314>)
  8002270:	f016 ff36 	bl	80190e0 <rclc_timer_init_default>
  8002274:	4603      	mov	r3, r0
-  ping_timer_callback) != RCL_RET_OK)
+  ping_timer_callback) != RCL_RET_OK) /* 定时器到期时调用的回调函数 */
  8002276:	2b00      	cmp	r3, #0
  8002278:	d1ed      	bne.n	8002256 <StartDefaultTask+0x18e>
   }
 
-  while (rclc_timer_init_default(
+  while (rclc_timer_init_default(    /* 初始化 odom 定时器（200ms 周期 = 5Hz） */
  800227a:	e005      	b.n	8002288 <StartDefaultTask+0x1c0>
-  &odom_timer,
-  &support,
-  RCL_MS_TO_NS(200),
-  odom_timer_callback) != RCL_RET_OK)
+  &odom_timer,                        /* 定时器对象指针 */
+  &support,                           /* rclc 支持对象 */
+  RCL_MS_TO_NS(200),                  /* 周期：200ms 转换为纳秒 */
+  odom_timer_callback) != RCL_RET_OK) /* 定时器到期时调用的回调函数（里程计积分 + 发布） */
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除错误状态 */
  800227c:	f016 ffc8 	bl	8019210 <rcutils_reset_error>
-    osDelay(500U);
+    osDelay(500U);       /* 500ms 后重试 */
  8002280:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
  8002284:	f010 fb48 	bl	8012918 <osDelay>
-  while (rclc_timer_init_default(
+  while (rclc_timer_init_default(    /* 初始化 odom 定时器（200ms 周期 = 5Hz） */
  8002288:	4b55      	ldr	r3, [pc, #340]	@ (80023e0 <StartDefaultTask+0x318>)
  800228a:	9300      	str	r3, [sp, #0]
  800228c:	a336      	add	r3, pc, #216	@ (adr r3, 8002368 <StartDefaultTask+0x2a0>)
@@ -4576,21 +4576,21 @@ void StartDefaultTask(void *argument)
  8002294:	4853      	ldr	r0, [pc, #332]	@ (80023e4 <StartDefaultTask+0x31c>)
  8002296:	f016 ff23 	bl	80190e0 <rclc_timer_init_default>
  800229a:	4603      	mov	r3, r0
-  odom_timer_callback) != RCL_RET_OK)
+  odom_timer_callback) != RCL_RET_OK) /* 定时器到期时调用的回调函数（里程计积分 + 发布） */
  800229c:	2b00      	cmp	r3, #0
  800229e:	d1ed      	bne.n	800227c <StartDefaultTask+0x1b4>
   }
 
   /* executor容量为3：一个/cmd_vel订阅回调和两个定时器回调。 */
-  while (rclc_executor_init(&executor, &support.context, 3, &allocator) != RCL_RET_OK)
+  while (rclc_executor_init(&executor, &support.context, 3, &allocator) != RCL_RET_OK) /* 初始化 executor，句柄数 = 3 */
  80022a0:	e005      	b.n	80022ae <StartDefaultTask+0x1e6>
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除错误状态 */
  80022a2:	f016 ffb5 	bl	8019210 <rcutils_reset_error>
-    osDelay(500U);
+    osDelay(500U);       /* 500ms 后重试 */
  80022a6:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
  80022aa:	f010 fb35 	bl	8012918 <osDelay>
-  while (rclc_executor_init(&executor, &support.context, 3, &allocator) != RCL_RET_OK)
+  while (rclc_executor_init(&executor, &support.context, 3, &allocator) != RCL_RET_OK) /* 初始化 executor，句柄数 = 3 */
  80022ae:	f107 030c 	add.w	r3, r7, #12
  80022b2:	2203      	movs	r2, #3
  80022b4:	4939      	ldr	r1, [pc, #228]	@ (800239c <StartDefaultTask+0x2d4>)
@@ -4601,19 +4601,19 @@ void StartDefaultTask(void *argument)
  80022c0:	d1ef      	bne.n	80022a2 <StartDefaultTask+0x1da>
   }
 
-  while (rclc_executor_add_subscription(
+  while (rclc_executor_add_subscription( /* 将 /cmd_vel 订阅器注册到 executor */
  80022c2:	e005      	b.n	80022d0 <StartDefaultTask+0x208>
-  &cmd_vel_subscriber,
-  &cmd_vel_msg,
-  cmd_vel_callback,
-  ON_NEW_DATA) != RCL_RET_OK)
+  &cmd_vel_subscriber,                    /* 订阅器对象指针 */
+  &cmd_vel_msg,                           /* 消息实例指针（有新数据时自动填充） */
+  cmd_vel_callback,                       /* 收到新消息时的回调函数 */
+  ON_NEW_DATA) != RCL_RET_OK)             /* 触发策略：仅在新数据到达时调用回调 */
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除错误状态 */
  80022c4:	f016 ffa4 	bl	8019210 <rcutils_reset_error>
-    osDelay(500U);
+    osDelay(500U);       /* 500ms 后重试 */
  80022c8:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
  80022cc:	f010 fb24 	bl	8012918 <osDelay>
-  while (rclc_executor_add_subscription(
+  while (rclc_executor_add_subscription( /* 将 /cmd_vel 订阅器注册到 executor */
  80022d0:	2300      	movs	r3, #0
  80022d2:	9300      	str	r3, [sp, #0]
  80022d4:	4b45      	ldr	r3, [pc, #276]	@ (80023ec <StartDefaultTask+0x324>)
@@ -4622,20 +4622,20 @@ void StartDefaultTask(void *argument)
  80022da:	4843      	ldr	r0, [pc, #268]	@ (80023e8 <StartDefaultTask+0x320>)
  80022dc:	f016 fb70 	bl	80189c0 <rclc_executor_add_subscription>
  80022e0:	4603      	mov	r3, r0
-  ON_NEW_DATA) != RCL_RET_OK)
+  ON_NEW_DATA) != RCL_RET_OK)             /* 触发策略：仅在新数据到达时调用回调 */
  80022e2:	2b00      	cmp	r3, #0
  80022e4:	d1ee      	bne.n	80022c4 <StartDefaultTask+0x1fc>
   }
 
-  while (rclc_executor_add_timer(&executor, &ping_timer) != RCL_RET_OK)
+  while (rclc_executor_add_timer(&executor, &ping_timer) != RCL_RET_OK) /* 将 ping 定时器注册到 executor */
  80022e6:	e005      	b.n	80022f4 <StartDefaultTask+0x22c>
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除错误状态 */
  80022e8:	f016 ff92 	bl	8019210 <rcutils_reset_error>
-    osDelay(500U);
+    osDelay(500U);       /* 500ms 后重试 */
  80022ec:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
  80022f0:	f010 fb12 	bl	8012918 <osDelay>
-  while (rclc_executor_add_timer(&executor, &ping_timer) != RCL_RET_OK)
+  while (rclc_executor_add_timer(&executor, &ping_timer) != RCL_RET_OK) /* 将 ping 定时器注册到 executor */
  80022f4:	4939      	ldr	r1, [pc, #228]	@ (80023dc <StartDefaultTask+0x314>)
  80022f6:	483c      	ldr	r0, [pc, #240]	@ (80023e8 <StartDefaultTask+0x320>)
  80022f8:	f016 fba0 	bl	8018a3c <rclc_executor_add_timer>
@@ -4644,15 +4644,15 @@ void StartDefaultTask(void *argument)
  8002300:	d1f2      	bne.n	80022e8 <StartDefaultTask+0x220>
   }
 
-  while (rclc_executor_add_timer(&executor, &odom_timer) != RCL_RET_OK)
+  while (rclc_executor_add_timer(&executor, &odom_timer) != RCL_RET_OK) /* 将 odom 定时器注册到 executor */
  8002302:	e005      	b.n	8002310 <StartDefaultTask+0x248>
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除错误状态 */
  8002304:	f016 ff84 	bl	8019210 <rcutils_reset_error>
-    osDelay(500U);
+    osDelay(500U);       /* 500ms 后重试 */
  8002308:	f44f 70fa 	mov.w	r0, #500	@ 0x1f4
  800230c:	f010 fb04 	bl	8012918 <osDelay>
-  while (rclc_executor_add_timer(&executor, &odom_timer) != RCL_RET_OK)
+  while (rclc_executor_add_timer(&executor, &odom_timer) != RCL_RET_OK) /* 将 odom 定时器注册到 executor */
  8002310:	4934      	ldr	r1, [pc, #208]	@ (80023e4 <StartDefaultTask+0x31c>)
  8002312:	4835      	ldr	r0, [pc, #212]	@ (80023e8 <StartDefaultTask+0x320>)
  8002314:	f016 fb92 	bl	8018a3c <rclc_executor_add_timer>
@@ -4662,15 +4662,15 @@ void StartDefaultTask(void *argument)
   }
 
   /* 通过串口与 Agent 同步时间，使 odom 时间戳与 ROS 时间对齐。 */
-  while (rmw_uros_sync_session(1000) != RMW_RET_OK)
+  while (rmw_uros_sync_session(1000) != RMW_RET_OK) /* 与 Agent 时间同步，超时 1000ms */
  800231e:	e004      	b.n	800232a <StartDefaultTask+0x262>
   {
-    rcl_reset_error();
+    rcl_reset_error();   /* 清除错误状态 */
  8002320:	f016 ff76 	bl	8019210 <rcutils_reset_error>
-    osDelay(100U);
+    osDelay(100U);       /* 100ms 后重试 */
  8002324:	2064      	movs	r0, #100	@ 0x64
  8002326:	f010 faf7 	bl	8012918 <osDelay>
-  while (rmw_uros_sync_session(1000) != RMW_RET_OK)
+  while (rmw_uros_sync_session(1000) != RMW_RET_OK) /* 与 Agent 时间同步，超时 1000ms */
  800232a:	f44f 707a 	mov.w	r0, #1000	@ 0x3e8
  800232e:	f017 f9b9 	bl	80196a4 <rmw_uros_sync_session>
  8002332:	4603      	mov	r3, r0
@@ -4679,16 +4679,16 @@ void StartDefaultTask(void *argument)
   }
 
   /* 主循环驱动micro-ROS executor，最多等待50ms处理一次事件。 */
-  for (;;)
+  for (;;)   /* FreeRTOS 任务永不返回，无限循环 */
   {
-    rcl_ret_t spin_ret = rclc_executor_spin_some(&executor, RCL_MS_TO_NS(50));
+    rcl_ret_t spin_ret = rclc_executor_spin_some(&executor, RCL_MS_TO_NS(50)); /* 驱动 executor 处理事件，超时 50ms */
  8002338:	a30d      	add	r3, pc, #52	@ (adr r3, 8002370 <StartDefaultTask+0x2a8>)
  800233a:	e9d3 2300 	ldrd	r2, r3, [r3]
  800233e:	482a      	ldr	r0, [pc, #168]	@ (80023e8 <StartDefaultTask+0x320>)
  8002340:	f016 fd96 	bl	8018e70 <rclc_executor_spin_some>
  8002344:	6378      	str	r0, [r7, #52]	@ 0x34
 
-    if ((spin_ret != RCL_RET_OK) && (spin_ret != RCL_RET_TIMEOUT))
+    if ((spin_ret != RCL_RET_OK) && (spin_ret != RCL_RET_TIMEOUT)) /* 返回值既非 OK 也非 TIMEOUT = 异常 */
  8002346:	6b7b      	ldr	r3, [r7, #52]	@ 0x34
  8002348:	2b00      	cmp	r3, #0
  800234a:	d009      	beq.n	8002360 <StartDefaultTask+0x298>
@@ -4696,17 +4696,17 @@ void StartDefaultTask(void *argument)
  800234e:	2b02      	cmp	r3, #2
  8002350:	d006      	beq.n	8002360 <StartDefaultTask+0x298>
     {
-      g_microros_spin_error_count++;
+      g_microros_spin_error_count++;  /* 累加 executor 异常计数，用于诊断 */
  8002352:	4b27      	ldr	r3, [pc, #156]	@ (80023f0 <StartDefaultTask+0x328>)
  8002354:	681b      	ldr	r3, [r3, #0]
  8002356:	3301      	adds	r3, #1
  8002358:	4a25      	ldr	r2, [pc, #148]	@ (80023f0 <StartDefaultTask+0x328>)
  800235a:	6013      	str	r3, [r2, #0]
-      rcl_reset_error();
+      rcl_reset_error();              /* 清除错误状态，防止下次 spin 被阻塞 */
  800235c:	f016 ff58 	bl	8019210 <rcutils_reset_error>
     }
 
-    osDelay(10U);
+    osDelay(10U);  /* 延时 10 tick (10ms)，让出 CPU 给其他低优先级任务 */
  8002360:	200a      	movs	r0, #10
  8002362:	f010 fad9 	bl	8012918 <osDelay>
   {
@@ -4763,21 +4763,21 @@ void StartControlTask(void *argument)
    * 控制任务启动时先打开 FDCAN1，并把后驱和转向都置到安全零值。
    * 后续 10ms 循环只负责根据 /cmd_vel 周期刷新目标。
    */
-  CanMotor_Init();
+  CanMotor_Init();                           /* 初始化后驱电机 CAN 通信参数（速度换算系数、限幅等） */
  80023fc:	f7ff f8a8 	bl	8001550 <CanMotor_Init>
-  g_can_motor_last_status = CanMotor_Stop();
+  g_can_motor_last_status = CanMotor_Stop(); /* 发送 CAN 停止命令给后驱电机，保存发送状态 */
  8002400:	f7ff f986 	bl	8001710 <CanMotor_Stop>
  8002404:	4603      	mov	r3, r0
  8002406:	461a      	mov	r2, r3
  8002408:	4b1f      	ldr	r3, [pc, #124]	@ (8002488 <StartControlTask+0x94>)
  800240a:	701a      	strb	r2, [r3, #0]
-  g_eps_steer_last_status = EpsSteer_SetManualMode();
+  g_eps_steer_last_status = EpsSteer_SetManualMode(); /* 设置 EPS 转向为手动模式（允许 MCU 下发角度命令） */
  800240c:	f7ff fa41 	bl	8001892 <EpsSteer_SetManualMode>
  8002410:	4603      	mov	r3, r0
  8002412:	461a      	mov	r2, r3
  8002414:	4b1d      	ldr	r3, [pc, #116]	@ (800248c <StartControlTask+0x98>)
  8002416:	701a      	strb	r2, [r3, #0]
-  g_eps_steer_last_status = EpsSteer_SetZero();
+  g_eps_steer_last_status = EpsSteer_SetZero();      /* 将前轮转向角置零（回正），保存发送状态 */
  8002418:	f7ff fa4b 	bl	80018b2 <EpsSteer_SetZero>
  800241c:	4603      	mov	r3, r0
  800241e:	461a      	mov	r2, r3
@@ -4786,14 +4786,14 @@ void StartControlTask(void *argument)
    * micro-ROS 的 /cmd_vel 回调负责更新 g_chassis_cmd_linear_x 和 g_chassis_cmd_angular_z，
    * 这里统一转换成后驱电机目标速度和前轮转向目标角度。
    */
-  for (;;)
+  for (;;)   /* 控制循环永不退出 */
   {
-    uint32_t now = osKernelGetTickCount();
+    uint32_t now = osKernelGetTickCount(); /* 获取当前系统 tick 计数（1 tick = 1ms） */
  8002424:	f010 f9ca 	bl	80127bc <osKernelGetTickCount>
  8002428:	60f8      	str	r0, [r7, #12]
 
     /* /cmd_vel超时或从未收到命令时，主动清零目标避免底盘继续运动。 */
-    if ((g_chassis_cmd_last_tick == 0U) || ((now - g_chassis_cmd_last_tick) > pdMS_TO_TICKS(500)))
+    if ((g_chassis_cmd_last_tick == 0U) || ((now - g_chassis_cmd_last_tick) > pdMS_TO_TICKS(500))) /* 从未收到命令 或 超过500ms没有更新 */
  800242a:	4b19      	ldr	r3, [pc, #100]	@ (8002490 <StartControlTask+0x9c>)
  800242c:	681b      	ldr	r3, [r3, #0]
  800242e:	2b00      	cmp	r3, #0
@@ -4805,18 +4805,18 @@ void StartControlTask(void *argument)
  800243a:	f5b3 7ffa 	cmp.w	r3, #500	@ 0x1f4
  800243e:	d907      	bls.n	8002450 <StartControlTask+0x5c>
     {
-      g_chassis_cmd_linear_x = 0.0f;
+      g_chassis_cmd_linear_x = 0.0f;   /* 线速度清零（停止前进/后退） */
  8002440:	4b14      	ldr	r3, [pc, #80]	@ (8002494 <StartControlTask+0xa0>)
  8002442:	f04f 0200 	mov.w	r2, #0
  8002446:	601a      	str	r2, [r3, #0]
-      g_chassis_cmd_angular_z = 0.0f;
+      g_chassis_cmd_angular_z = 0.0f;  /* 角速度清零（停止转向） */
  8002448:	4b13      	ldr	r3, [pc, #76]	@ (8002498 <StartControlTask+0xa4>)
  800244a:	f04f 0200 	mov.w	r2, #0
  800244e:	601a      	str	r2, [r3, #0]
     }
 
     /* 将最新线速度和角速度转换为后驱速度、前轮转角，并通过底层接口下发。 */
-    Chassis_ControlFromCmdVel(g_chassis_cmd_linear_x, g_chassis_cmd_angular_z);
+    Chassis_ControlFromCmdVel(g_chassis_cmd_linear_x, g_chassis_cmd_angular_z); /* 阿克曼模型逆向解算 + CAN 下发 */
  8002450:	4b10      	ldr	r3, [pc, #64]	@ (8002494 <StartControlTask+0xa0>)
  8002452:	edd3 7a00 	vldr	s15, [r3]
  8002456:	4b10      	ldr	r3, [pc, #64]	@ (8002498 <StartControlTask+0xa4>)
@@ -4825,21 +4825,21 @@ void StartControlTask(void *argument)
  8002460:	eeb0 0a67 	vmov.f32	s0, s15
  8002464:	f7ff fbb2 	bl	8001bcc <Chassis_ControlFromCmdVel>
     /* 保存本周期底层CAN发送状态，便于调试和/chassis_feedback观察。 */
-    g_can_motor_last_status = g_drive_motor_can_status;
+    g_can_motor_last_status = g_drive_motor_can_status;  /* 缓存后驱电机 CAN 发送状态 */
  8002468:	4b0c      	ldr	r3, [pc, #48]	@ (800249c <StartControlTask+0xa8>)
  800246a:	781b      	ldrb	r3, [r3, #0]
  800246c:	b2da      	uxtb	r2, r3
  800246e:	4b06      	ldr	r3, [pc, #24]	@ (8002488 <StartControlTask+0x94>)
  8002470:	701a      	strb	r2, [r3, #0]
-    g_eps_steer_last_status = g_steer_motor_can_status;
+    g_eps_steer_last_status = g_steer_motor_can_status;  /* 缓存转向电机 CAN 发送状态 */
  8002472:	4b0b      	ldr	r3, [pc, #44]	@ (80024a0 <StartControlTask+0xac>)
  8002474:	781b      	ldrb	r3, [r3, #0]
  8002476:	b2da      	uxtb	r2, r3
  8002478:	4b04      	ldr	r3, [pc, #16]	@ (800248c <StartControlTask+0x98>)
  800247a:	701a      	strb	r2, [r3, #0]
-    CanMotor_UpdateDiagnostics();
+    CanMotor_UpdateDiagnostics();  /* 更新后驱电机诊断信息（超时检测、通信状态统计） */
  800247c:	f7ff f886 	bl	800158c <CanMotor_UpdateDiagnostics>
-    osDelay(10U);
+    osDelay(10U);                  /* 延时 10 tick (10ms)，实现 100Hz 控制频率 */
  8002480:	200a      	movs	r0, #10
  8002482:	f010 fa49 	bl	8012918 <osDelay>
   {
@@ -4864,11 +4864,11 @@ void StartCanTask(void *argument)
  80024a8:	af00      	add	r7, sp, #0
  80024aa:	6078      	str	r0, [r7, #4]
   /* 当前任务尚无具体业务，周期延时保持线程存活。 */
-  for(;;)
+  for(;;)   /* 无限循环阻塞等待 CAN 消息 */
   {
-    CanRxMsg_t rx_msg;
+    CanRxMsg_t rx_msg;  /* 栈上分配 CAN 接收消息临时变量 */
 
-    if (osMessageQueueGet(canRxQueueHandle, &rx_msg, NULL, osWaitForever) == osOK)
+    if (osMessageQueueGet(canRxQueueHandle, &rx_msg, NULL, osWaitForever) == osOK) /* 阻塞等待 CAN 队列有新消息 */
  80024ac:	4b08      	ldr	r3, [pc, #32]	@ (80024d0 <StartCanTask+0x2c>)
  80024ae:	6818      	ldr	r0, [r3, #0]
  80024b0:	f107 0108 	add.w	r1, r7, #8
@@ -4879,7 +4879,7 @@ void StartCanTask(void *argument)
  80024c0:	2b00      	cmp	r3, #0
  80024c2:	d1f3      	bne.n	80024ac <StartCanTask+0x8>
     {
-      can_rx_process(&rx_msg);
+      can_rx_process(&rx_msg); /* 处理收到的 CAN 帧（解析 0x186 后驱反馈 / 0x18F EPS 反馈） */
  80024c4:	f107 0308 	add.w	r3, r7, #8
  80024c8:	4618      	mov	r0, r3
  80024ca:	f000 f8b7 	bl	800263c <can_rx_process>
@@ -4900,9 +4900,9 @@ void StartEncoderTask(void *argument)
  80024da:	6078      	str	r0, [r7, #4]
   /* USER CODE BEGIN StartEncoderTask */
   /* 当前任务尚无具体业务，周期延时保持线程存活。 */
-  for(;;)
+  for(;;)         /* 占位循环 */
   {
-    osDelay(1000U);
+    osDelay(1000U); /* 延时 1000 tick (1秒)，保持线程不退出 */
  80024dc:	f44f 707a 	mov.w	r0, #1000	@ 0x3e8
  80024e0:	f010 fa1a 	bl	8012918 <osDelay>
  80024e4:	e7fa      	b.n	80024dc <StartEncoderTask+0x8>
@@ -4920,22 +4920,22 @@ void StartImuTask(void *argument)
  80024ec:	af00      	add	r7, sp, #0
  80024ee:	6078      	str	r0, [r7, #4]
   /* USER CODE BEGIN StartImuTask */
-  (void)argument;
+  (void)argument;  /* 消除"未使用参数"编译器警告 */
 
   /* MS901M按115200波特率初始化，初始化结果保存到全局状态。 */
-  g_ms901m_init_status = atk_ms901m_init(115200U);
+  g_ms901m_init_status = atk_ms901m_init(115200U); /* 初始化 MS901M，波特率 115200，结果存全局变量 */
  80024f0:	f44f 30e1 	mov.w	r0, #115200	@ 0x1c200
  80024f4:	f7fe fdd4 	bl	80010a0 <atk_ms901m_init>
  80024f8:	4603      	mov	r3, r0
  80024fa:	461a      	mov	r2, r3
  80024fc:	4b11      	ldr	r3, [pc, #68]	@ (8002544 <StartImuTask+0x5c>)
  80024fe:	701a      	strb	r2, [r3, #0]
-  for (;;)
+  for (;;)   /* 10ms 周期姿态读取循环 */
   {
-    atk_ms901m_attitude_data_t attitude;
+    atk_ms901m_attitude_data_t attitude; /* 栈上分配姿态数据临时变量 */
 
     /* 每10ms尝试读取一次姿态，单次读取最多等待5ms。 */
-    if (atk_ms901m_get_attitude(&attitude, 5U) == ATK_MS901M_EOK)
+    if (atk_ms901m_get_attitude(&attitude, 5U) == ATK_MS901M_EOK) /* 尝试读取姿态，超时 5ms */
  8002500:	f107 030c 	add.w	r3, r7, #12
  8002504:	2105      	movs	r1, #5
  8002506:	4618      	mov	r0, r3
@@ -4945,17 +4945,17 @@ void StartImuTask(void *argument)
  8002510:	d110      	bne.n	8002534 <StartImuTask+0x4c>
     {
       /* 读取成功后发布最新姿态，并累加有效帧计数。 */
-      g_ms901m_attitude = attitude;
+      g_ms901m_attitude = attitude;   /* 拷贝最新姿态数据到全局变量（供 odom 回调等使用） */
  8002512:	4b0d      	ldr	r3, [pc, #52]	@ (8002548 <StartImuTask+0x60>)
  8002514:	461c      	mov	r4, r3
  8002516:	f107 030c 	add.w	r3, r7, #12
  800251a:	e893 0007 	ldmia.w	r3, {r0, r1, r2}
  800251e:	e884 0007 	stmia.w	r4, {r0, r1, r2}
-      g_ms901m_frame_ok = 1U;
+      g_ms901m_frame_ok = 1U;         /* 标记本周期姿态有效 */
  8002522:	4b0a      	ldr	r3, [pc, #40]	@ (800254c <StartImuTask+0x64>)
  8002524:	2201      	movs	r2, #1
  8002526:	701a      	strb	r2, [r3, #0]
-      g_ms901m_rx_count++;
+      g_ms901m_rx_count++;            /* 累加有效帧计数（诊断用） */
  8002528:	4b09      	ldr	r3, [pc, #36]	@ (8002550 <StartImuTask+0x68>)
  800252a:	681b      	ldr	r3, [r3, #0]
  800252c:	3301      	adds	r3, #1
@@ -4966,13 +4966,13 @@ void StartImuTask(void *argument)
     else
     {
       /* 本周期没有拿到有效姿态帧，只清状态，不清最后一次姿态值。 */
-      g_ms901m_frame_ok = 0U;
+      g_ms901m_frame_ok = 0U; /* 标记本周期姿态无效（保留上次有效值供上层容错） */
  8002534:	4b05      	ldr	r3, [pc, #20]	@ (800254c <StartImuTask+0x64>)
  8002536:	2200      	movs	r2, #0
  8002538:	701a      	strb	r2, [r3, #0]
     }
 
-    osDelay(10U);
+    osDelay(10U); /* 延时 10 tick (10ms)，实现 100Hz 读取频率 */
  800253a:	200a      	movs	r0, #10
  800253c:	f010 f9ec 	bl	8012918 <osDelay>
   {
@@ -4995,41 +4995,41 @@ void StartSbusTask(void *argument)
  8002558:	af00      	add	r7, sp, #0
  800255a:	6078      	str	r0, [r7, #4]
   /* USER CODE BEGIN StartSbusTask */
-  (void)argument;
+  (void)argument;  /* 消除"未使用参数"编译器警告 */
 
   /* UART5按SBUS真实接收配置启动，底层会优先使用DMA接收整帧。 */
-  SBUS_Init();
+  SBUS_Init();  /* 初始化 SBUS：UART5 配置为 100kbps/8E2 并启动 DMA 循环接收 */
  800255c:	f000 fdcc 	bl	80030f8 <SBUS_Init>
 
-  uint32_t last_rx_count = SBUS_GetRxFrameCount();
+  uint32_t last_rx_count = SBUS_GetRxFrameCount(); /* 记录当前 SBUS 帧计数作为基线 */
  8002560:	f000 fe40 	bl	80031e4 <SBUS_GetRxFrameCount>
  8002564:	6478      	str	r0, [r7, #68]	@ 0x44
 
-  for (;;)
+  for (;;)   /* 10ms 周期 SBUS 帧检查循环 */
   {
-    uint32_t rx_count = SBUS_GetRxFrameCount();
+    uint32_t rx_count = SBUS_GetRxFrameCount(); /* 获取最新的 SBUS 帧计数 */
  8002566:	f000 fe3d 	bl	80031e4 <SBUS_GetRxFrameCount>
  800256a:	6438      	str	r0, [r7, #64]	@ 0x40
 
     /* 只有帧计数变化时才解析，避免重复处理同一帧SBUS数据。 */
-    if (rx_count != last_rx_count)
+    if (rx_count != last_rx_count) /* 帧计数变化 = 有新帧到达 */
  800256c:	6c3a      	ldr	r2, [r7, #64]	@ 0x40
  800256e:	6c7b      	ldr	r3, [r7, #68]	@ 0x44
  8002570:	429a      	cmp	r2, r3
  8002572:	d039      	beq.n	80025e8 <StartSbusTask+0x94>
     {
-      SbusData_t data;
-      SbusControl_t ctrl;
-      const uint8_t *frame = SBUS_GetRxBuffer();
+      SbusData_t data;          /* 栈上分配 SBUS 原始数据临时变量 */
+      SbusControl_t ctrl;       /* 栈上分配 SBUS 控制量临时变量 */
+      const uint8_t *frame = SBUS_GetRxBuffer(); /* 获取 DMA 接收缓冲区指针（指向 25 字节 SBUS 帧） */
  8002574:	f000 fe42 	bl	80031fc <SBUS_GetRxBuffer>
  8002578:	63f8      	str	r0, [r7, #60]	@ 0x3c
 
-      last_rx_count = rx_count;
+      last_rx_count = rx_count; /* 更新本地帧计数，避免重复处理同一帧 */
  800257a:	6c3b      	ldr	r3, [r7, #64]	@ 0x40
  800257c:	647b      	str	r3, [r7, #68]	@ 0x44
 
       /* 帧头和打包格式检查通过后，将16通道数据转换为控制量。 */
-      if (SBUS_TryParseFrame(frame, &data))
+      if (SBUS_TryParseFrame(frame, &data)) /* 解析 SBUS 帧：验证帧头、尾标志，提取 16 通道和标志位 */
  800257e:	f107 030c 	add.w	r3, r7, #12
  8002582:	4619      	mov	r1, r3
  8002584:	6bf8      	ldr	r0, [r7, #60]	@ 0x3c
@@ -5038,7 +5038,7 @@ void StartSbusTask(void *argument)
  800258c:	2b00      	cmp	r3, #0
  800258e:	d028      	beq.n	80025e2 <StartSbusTask+0x8e>
       {
-        SBUS_ConvertToControl(&data, &ctrl);
+        SBUS_ConvertToControl(&data, &ctrl); /* 将 16 通道原始值 (0~2047) 换算为控制量（档位、百分比、急停） */
  8002590:	f107 0234 	add.w	r2, r7, #52	@ 0x34
  8002594:	f107 030c 	add.w	r3, r7, #12
  8002598:	4611      	mov	r1, r2
@@ -5046,7 +5046,7 @@ void StartSbusTask(void *argument)
  800259c:	f000 ffe8 	bl	8003570 <SBUS_ConvertToControl>
 
         /* 发布最新SBUS原始通道、控制量、failsafe和急停状态。 */
-        g_sbus_data = data;
+        g_sbus_data = data;                /* 更新全局 SBUS 原始数据 */
  80025a0:	4b13      	ldr	r3, [pc, #76]	@ (80025f0 <StartSbusTask+0x9c>)
  80025a2:	461c      	mov	r4, r3
  80025a4:	f107 050c 	add.w	r5, r7, #12
@@ -5058,22 +5058,22 @@ void StartSbusTask(void *argument)
  80025b4:	6020      	str	r0, [r4, #0]
  80025b6:	3404      	adds	r4, #4
  80025b8:	8021      	strh	r1, [r4, #0]
-        g_sbus_control = ctrl;
+        g_sbus_control = ctrl;             /* 更新全局 SBUS 控制量 */
  80025ba:	4b0e      	ldr	r3, [pc, #56]	@ (80025f4 <StartSbusTask+0xa0>)
  80025bc:	f107 0234 	add.w	r2, r7, #52	@ 0x34
  80025c0:	e892 0003 	ldmia.w	r2, {r0, r1}
  80025c4:	6018      	str	r0, [r3, #0]
  80025c6:	3304      	adds	r3, #4
  80025c8:	8019      	strh	r1, [r3, #0]
-        g_sbus_frame_ok = 1U;
+        g_sbus_frame_ok = 1U;              /* 标记当前帧解析有效 */
  80025ca:	4b0b      	ldr	r3, [pc, #44]	@ (80025f8 <StartSbusTask+0xa4>)
  80025cc:	2201      	movs	r2, #1
  80025ce:	701a      	strb	r2, [r3, #0]
-        g_sbus_failsafe = data.failsafe;
+        g_sbus_failsafe = data.failsafe;    /* 更新遥控失控标志（0=正常，1=信号丢失） */
  80025d0:	f897 202f 	ldrb.w	r2, [r7, #47]	@ 0x2f
  80025d4:	4b09      	ldr	r3, [pc, #36]	@ (80025fc <StartSbusTask+0xa8>)
  80025d6:	701a      	strb	r2, [r3, #0]
-        g_sbus_estop_active = ctrl.estop;
+        g_sbus_estop_active = ctrl.estop;   /* 更新急停激活状态（0=正常，1=急停激活） */
  80025d8:	f897 2039 	ldrb.w	r2, [r7, #57]	@ 0x39
  80025dc:	4b08      	ldr	r3, [pc, #32]	@ (8002600 <StartSbusTask+0xac>)
  80025de:	701a      	strb	r2, [r3, #0]
@@ -5083,14 +5083,14 @@ void StartSbusTask(void *argument)
       else
       {
         /* 新帧解析失败时仅标记无效，保留上一帧控制状态供上层自行处理。 */
-        g_sbus_frame_ok = 0U;
+        g_sbus_frame_ok = 0U; /* 标记当前帧无效（上层可根据此标志决定是否使用旧数据） */
  80025e2:	4b05      	ldr	r3, [pc, #20]	@ (80025f8 <StartSbusTask+0xa4>)
  80025e4:	2200      	movs	r2, #0
  80025e6:	701a      	strb	r2, [r3, #0]
       }
     }
 
-    osDelay(10);
+    osDelay(10); /* 延时 10 tick (10ms)，100Hz 检查频率 */
  80025e8:	200a      	movs	r0, #10
  80025ea:	f010 f995 	bl	8012918 <osDelay>
   {
@@ -5114,9 +5114,9 @@ void StartBatteryTask(void *argument)
  800260a:	6078      	str	r0, [r7, #4]
   /* USER CODE BEGIN StartBatteryTask */
   /* 当前任务尚无具体业务，周期延时保持线程存活。 */
-  for(;;)
+  for(;;)         /* 占位循环 */
   {
-    osDelay(1000U);
+    osDelay(1000U); /* 延时 1000 tick (1秒)，保持线程不退出 */
  800260c:	f44f 707a 	mov.w	r0, #1000	@ 0x3e8
  8002610:	f010 f982 	bl	8012918 <osDelay>
  8002614:	e7fa      	b.n	800260c <StartBatteryTask+0x8>
@@ -5134,9 +5134,9 @@ void StartGpsTask(void *argument)
  800261c:	6078      	str	r0, [r7, #4]
   /* USER CODE BEGIN StartGpsTask */
   /* 当前任务尚无具体业务，周期延时保持线程存活。 */
-  for(;;)
+  for(;;)         /* 占位循环 */
   {
-    osDelay(1000U);
+    osDelay(1000U); /* 延时 1000 tick (1秒)，保持线程不退出 */
  800261e:	f44f 707a 	mov.w	r0, #1000	@ 0x3e8
  8002622:	f010 f979 	bl	8012918 <osDelay>
  8002626:	e7fa      	b.n	800261e <StartGpsTask+0x8>
@@ -5154,9 +5154,9 @@ void StartLidarTask(void *argument)
  800262e:	6078      	str	r0, [r7, #4]
   /* USER CODE BEGIN StartLidarTask */
   /* 当前任务尚无具体业务，周期延时保持线程存活。 */
-  for(;;)
+  for(;;)         /* 占位循环 */
   {
-    osDelay(1000U);
+    osDelay(1000U); /* 延时 1000 tick (1秒)，保持线程不退出 */
  8002630:	f44f 707a 	mov.w	r0, #1000	@ 0x3e8
  8002634:	f010 f970 	bl	8012918 <osDelay>
  8002638:	e7fa      	b.n	8002630 <StartLidarTask+0x8>
@@ -5167,74 +5167,74 @@ void StartLidarTask(void *argument)
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
-static void can_rx_process(const CanRxMsg_t *msg)
+static void can_rx_process(const CanRxMsg_t *msg) /* CAN 接收帧处理函数：按 CAN ID 分发到不同解析逻辑 */
 {
  800263c:	b580      	push	{r7, lr}
  800263e:	b084      	sub	sp, #16
  8002640:	af00      	add	r7, sp, #0
  8002642:	6078      	str	r0, [r7, #4]
-  if (msg == NULL)
+  if (msg == NULL)   /* 空指针保护 */
  8002644:	687b      	ldr	r3, [r7, #4]
  8002646:	2b00      	cmp	r3, #0
  8002648:	d05e      	beq.n	8002708 <can_rx_process+0xcc>
   {
-    return;
+    return;          /* 直接返回，不做处理 */
   }
 
-  if (msg->header.IdType != FDCAN_STANDARD_ID)
+  if (msg->header.IdType != FDCAN_STANDARD_ID) /* 只处理标准帧（11 位 ID），忽略扩展帧（29 位 ID） */
  800264a:	687b      	ldr	r3, [r7, #4]
  800264c:	685b      	ldr	r3, [r3, #4]
  800264e:	2b00      	cmp	r3, #0
  8002650:	d15c      	bne.n	800270c <can_rx_process+0xd0>
   {
-    return;
+    return;  /* 非标准帧直接丢弃 */
   }
 
   /* 后驱电机反馈帧 0x186：解析实际线速度。 */
-  if ((msg->header.Identifier == CAN_MOTOR_FEEDBACK_ID) &&
+  if ((msg->header.Identifier == CAN_MOTOR_FEEDBACK_ID) &&   /* 帧 ID 匹配 0x186（后驱电机反馈） */
  8002652:	687b      	ldr	r3, [r7, #4]
  8002654:	681b      	ldr	r3, [r3, #0]
  8002656:	f5b3 7fc3 	cmp.w	r3, #390	@ 0x186
  800265a:	d125      	bne.n	80026a8 <can_rx_process+0x6c>
-      (msg->header.DataLength >= FDCAN_DLC_BYTES_5))
+      (msg->header.DataLength >= FDCAN_DLC_BYTES_5))          /* 数据长度至少 5 字节（确保完整） */
  800265c:	687b      	ldr	r3, [r7, #4]
  800265e:	68db      	ldr	r3, [r3, #12]
-  if ((msg->header.Identifier == CAN_MOTOR_FEEDBACK_ID) &&
+  if ((msg->header.Identifier == CAN_MOTOR_FEEDBACK_ID) &&   /* 帧 ID 匹配 0x186（后驱电机反馈） */
  8002660:	2b04      	cmp	r3, #4
  8002662:	d921      	bls.n	80026a8 <can_rx_process+0x6c>
   {
-    uint16_t raw_speed;
+    uint16_t raw_speed;  /* 原始速度值（0~65535 编码） */
 
-    raw_speed = (uint16_t)msg->data[3] |
+    raw_speed = (uint16_t)msg->data[3] |                              /* 速度低字节 (data[3]) */
  8002664:	687b      	ldr	r3, [r7, #4]
  8002666:	f893 302b 	ldrb.w	r3, [r3, #43]	@ 0x2b
  800266a:	461a      	mov	r2, r3
-                (uint16_t)((uint16_t)msg->data[4] << 8U);
+                (uint16_t)((uint16_t)msg->data[4] << 8U);             /* 速度高字节 (data[4]) 左移 8 位后拼合 */
  800266c:	687b      	ldr	r3, [r7, #4]
  800266e:	f893 302c 	ldrb.w	r3, [r3, #44]	@ 0x2c
  8002672:	021b      	lsls	r3, r3, #8
  8002674:	b29b      	uxth	r3, r3
-    raw_speed = (uint16_t)msg->data[3] |
+    raw_speed = (uint16_t)msg->data[3] |                              /* 速度低字节 (data[3]) */
  8002676:	4313      	orrs	r3, r2
  8002678:	81fb      	strh	r3, [r7, #14]
 
-    g_drive_motor_actual_speed_raw = raw_speed;
+    g_drive_motor_actual_speed_raw = raw_speed;                        /* 保存原始速度值（调试用） */
  800267a:	4a26      	ldr	r2, [pc, #152]	@ (8002714 <can_rx_process+0xd8>)
  800267c:	89fb      	ldrh	r3, [r7, #14]
  800267e:	8013      	strh	r3, [r2, #0]
-    g_drive_motor_actual_speed_mps = DriveMotor_RawFeedbackToSpeed(raw_speed);
+    g_drive_motor_actual_speed_mps = DriveMotor_RawFeedbackToSpeed(raw_speed); /* 原始值换算为 m/s */
  8002680:	89fb      	ldrh	r3, [r7, #14]
  8002682:	4618      	mov	r0, r3
  8002684:	f7ff f9da 	bl	8001a3c <DriveMotor_RawFeedbackToSpeed>
  8002688:	eef0 7a40 	vmov.f32	s15, s0
  800268c:	4b22      	ldr	r3, [pc, #136]	@ (8002718 <can_rx_process+0xdc>)
  800268e:	edc3 7a00 	vstr	s15, [r3]
-    g_drive_motor_feedback_last_tick = osKernelGetTickCount();
+    g_drive_motor_feedback_last_tick = osKernelGetTickCount();         /* 记录本次反馈时间戳（用于超时诊断） */
  8002692:	f010 f893 	bl	80127bc <osKernelGetTickCount>
  8002696:	4603      	mov	r3, r0
  8002698:	4a20      	ldr	r2, [pc, #128]	@ (800271c <can_rx_process+0xe0>)
  800269a:	6013      	str	r3, [r2, #0]
-    g_drive_motor_feedback_rx_count++;
+    g_drive_motor_feedback_rx_count++;                                 /* 累加反馈帧接收计数 */
  800269c:	4b20      	ldr	r3, [pc, #128]	@ (8002720 <can_rx_process+0xe4>)
  800269e:	681b      	ldr	r3, [r3, #0]
  80026a0:	3301      	adds	r3, #1
@@ -5244,42 +5244,42 @@ static void can_rx_process(const CanRxMsg_t *msg)
  80026a6:	e032      	b.n	800270e <can_rx_process+0xd2>
   }
   /* EPS 反馈帧 0x18F：解析实际转向角，并解算车辆实际横摆角速度。 */
-  else if ((msg->header.Identifier == EPS_FEEDBACK_ID) &&
+  else if ((msg->header.Identifier == EPS_FEEDBACK_ID) &&             /* 帧 ID 匹配 0x18F（EPS 转向反馈） */
  80026a8:	687b      	ldr	r3, [r7, #4]
  80026aa:	681b      	ldr	r3, [r3, #0]
  80026ac:	f240 128f 	movw	r2, #399	@ 0x18f
  80026b0:	4293      	cmp	r3, r2
  80026b2:	d12c      	bne.n	800270e <can_rx_process+0xd2>
-           (msg->header.DataLength >= FDCAN_DLC_BYTES_3))
+           (msg->header.DataLength >= FDCAN_DLC_BYTES_3))              /* 数据长度至少 3 字节 */
  80026b4:	687b      	ldr	r3, [r7, #4]
  80026b6:	68db      	ldr	r3, [r3, #12]
-  else if ((msg->header.Identifier == EPS_FEEDBACK_ID) &&
+  else if ((msg->header.Identifier == EPS_FEEDBACK_ID) &&             /* 帧 ID 匹配 0x18F（EPS 转向反馈） */
  80026b8:	2b02      	cmp	r3, #2
  80026ba:	d928      	bls.n	800270e <can_rx_process+0xd2>
   {
-    float actual_angle_deg;
+    float actual_angle_deg;  /* 实际转向角（度） */
 
-    actual_angle_deg = EpsSteer_ParseFeedback(msg->data);
+    actual_angle_deg = EpsSteer_ParseFeedback(msg->data);              /* 从 CAN 数据字节解析 EPS 实际转向角 */
  80026bc:	687b      	ldr	r3, [r7, #4]
  80026be:	3328      	adds	r3, #40	@ 0x28
  80026c0:	4618      	mov	r0, r3
  80026c2:	f7ff f8fe 	bl	80018c2 <EpsSteer_ParseFeedback>
  80026c6:	ed87 0a02 	vstr	s0, [r7, #8]
 
-    g_eps_actual_angle_deg = actual_angle_deg;
+    g_eps_actual_angle_deg = actual_angle_deg;                         /* 更新全局 EPS 实际角度 */
  80026ca:	4a16      	ldr	r2, [pc, #88]	@ (8002724 <can_rx_process+0xe8>)
  80026cc:	68bb      	ldr	r3, [r7, #8]
  80026ce:	6013      	str	r3, [r2, #0]
-    g_steer_motor_actual_angle_deg = actual_angle_deg;
+    g_steer_motor_actual_angle_deg = actual_angle_deg;                 /* 同步更新转向电机实际角度（同一值） */
  80026d0:	4a15      	ldr	r2, [pc, #84]	@ (8002728 <can_rx_process+0xec>)
  80026d2:	68bb      	ldr	r3, [r7, #8]
  80026d4:	6013      	str	r3, [r2, #0]
-    g_eps_feedback_last_tick = osKernelGetTickCount();
+    g_eps_feedback_last_tick = osKernelGetTickCount();                 /* 记录本次反馈时间戳 */
  80026d6:	f010 f871 	bl	80127bc <osKernelGetTickCount>
  80026da:	4603      	mov	r3, r0
  80026dc:	4a13      	ldr	r2, [pc, #76]	@ (800272c <can_rx_process+0xf0>)
  80026de:	6013      	str	r3, [r2, #0]
-    g_eps_feedback_rx_count++;
+    g_eps_feedback_rx_count++;                                         /* 累加 EPS 反馈帧接收计数 */
  80026e0:	4b13      	ldr	r3, [pc, #76]	@ (8002730 <can_rx_process+0xf4>)
  80026e2:	681b      	ldr	r3, [r3, #0]
  80026e4:	3301      	adds	r3, #1
@@ -5287,7 +5287,7 @@ static void can_rx_process(const CanRxMsg_t *msg)
  80026e8:	6013      	str	r3, [r2, #0]
 
     /* 使用阿克曼模型由实际线速度和实际转向角解算车辆横摆角速度。 */
-    g_chassis_actual_angular_z = Chassis_CalcActualYawRate(
+    g_chassis_actual_angular_z = Chassis_CalcActualYawRate(            /* 阿克曼公式：ω = v/L * tan(δ) */
  80026ea:	4b0b      	ldr	r3, [pc, #44]	@ (8002718 <can_rx_process+0xdc>)
  80026ec:	edd3 7a00 	vldr	s15, [r3]
  80026f0:	edd7 0a02 	vldr	s1, [r7, #8]
@@ -5297,12 +5297,12 @@ static void can_rx_process(const CanRxMsg_t *msg)
  8002700:	4b0c      	ldr	r3, [pc, #48]	@ (8002734 <can_rx_process+0xf8>)
  8002702:	edc3 7a00 	vstr	s15, [r3]
  8002706:	e002      	b.n	800270e <can_rx_process+0xd2>
-    return;
+    return;          /* 直接返回，不做处理 */
  8002708:	bf00      	nop
  800270a:	e000      	b.n	800270e <can_rx_process+0xd2>
-    return;
+    return;  /* 非标准帧直接丢弃 */
  800270c:	bf00      	nop
-        g_drive_motor_actual_speed_mps, actual_angle_deg);
+        g_drive_motor_actual_speed_mps, actual_angle_deg);             /* 输入：实际线速度 (m/s)、实际转向角 (度) */
   }
 }
  800270e:	3710      	adds	r7, #16
@@ -5320,46 +5320,46 @@ static void can_rx_process(const CanRxMsg_t *msg)
 
 08002738 <HAL_FDCAN_RxFifo0Callback>:
 
-void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) /* FDCAN1 FIFO0 接收中断回调 */
 {
  8002738:	b580      	push	{r7, lr}
  800273a:	b08e      	sub	sp, #56	@ 0x38
  800273c:	af00      	add	r7, sp, #0
  800273e:	6078      	str	r0, [r7, #4]
  8002740:	6039      	str	r1, [r7, #0]
-  if ((hfdcan == NULL) ||
+  if ((hfdcan == NULL) ||                                         /* 句柄空指针检查 */
  8002742:	687b      	ldr	r3, [r7, #4]
  8002744:	2b00      	cmp	r3, #0
  8002746:	d02a      	beq.n	800279e <HAL_FDCAN_RxFifo0Callback+0x66>
-      (hfdcan->Instance != FDCAN1) ||
+      (hfdcan->Instance != FDCAN1) ||                              /* 只处理 FDCAN1 的中断（FDCAN2 不进入此回调） */
  8002748:	687b      	ldr	r3, [r7, #4]
  800274a:	681b      	ldr	r3, [r3, #0]
-  if ((hfdcan == NULL) ||
+  if ((hfdcan == NULL) ||                                         /* 句柄空指针检查 */
  800274c:	4a17      	ldr	r2, [pc, #92]	@ (80027ac <HAL_FDCAN_RxFifo0Callback+0x74>)
  800274e:	4293      	cmp	r3, r2
  8002750:	d125      	bne.n	800279e <HAL_FDCAN_RxFifo0Callback+0x66>
-      ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) == 0U) ||
+      ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) == 0U) ||     /* 确认是 FIFO0 新消息中断（非满/满/溢出等） */
  8002752:	683b      	ldr	r3, [r7, #0]
  8002754:	f003 0301 	and.w	r3, r3, #1
-      (hfdcan->Instance != FDCAN1) ||
+      (hfdcan->Instance != FDCAN1) ||                              /* 只处理 FDCAN1 的中断（FDCAN2 不进入此回调） */
  8002758:	2b00      	cmp	r3, #0
  800275a:	d020      	beq.n	800279e <HAL_FDCAN_RxFifo0Callback+0x66>
-      (canRxQueueHandle == NULL))
+      (canRxQueueHandle == NULL))                                  /* 队列句柄有效性检查（未初始化则跳过） */
  800275c:	4b14      	ldr	r3, [pc, #80]	@ (80027b0 <HAL_FDCAN_RxFifo0Callback+0x78>)
  800275e:	681b      	ldr	r3, [r3, #0]
-      ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) == 0U) ||
+      ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) == 0U) ||     /* 确认是 FIFO0 新消息中断（非满/满/溢出等） */
  8002760:	2b00      	cmp	r3, #0
  8002762:	d01c      	beq.n	800279e <HAL_FDCAN_RxFifo0Callback+0x66>
   {
-    return;
+    return;  /* 不满足条件 → 直接返回，不处理 */
   }
 
-  while (HAL_FDCAN_GetRxFifoFillLevel(hfdcan, FDCAN_RX_FIFO0) > 0U)
+  while (HAL_FDCAN_GetRxFifoFillLevel(hfdcan, FDCAN_RX_FIFO0) > 0U) /* 循环读取 FIFO0 中所有待处理消息 */
  8002764:	e013      	b.n	800278e <HAL_FDCAN_RxFifo0Callback+0x56>
   {
-    CanRxMsg_t rx_msg;
+    CanRxMsg_t rx_msg;  /* 栈上分配临时 CAN 消息变量 */
 
-    if (HAL_FDCAN_GetRxMessage(hfdcan,
+    if (HAL_FDCAN_GetRxMessage(hfdcan,               /* 从 FDCAN 外设读取一帧消息 */
  8002766:	f107 0308 	add.w	r3, r7, #8
  800276a:	3328      	adds	r3, #40	@ 0x28
  800276c:	f107 0208 	add.w	r2, r7, #8
@@ -5369,19 +5369,19 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
  8002778:	4603      	mov	r3, r0
  800277a:	2b00      	cmp	r3, #0
  800277c:	d111      	bne.n	80027a2 <HAL_FDCAN_RxFifo0Callback+0x6a>
-                               rx_msg.data) != HAL_OK)
+                               rx_msg.data) != HAL_OK) /* 输出：CAN 数据字节 */
     {
-      break;
+      break;  /* 读取失败 → 退出循环（防止死循环） */
     }
 
-    (void)osMessageQueuePut(canRxQueueHandle, &rx_msg, 0U, 0U);
+    (void)osMessageQueuePut(canRxQueueHandle, &rx_msg, 0U, 0U); /* 将 CAN 消息放入队列（非阻塞，队列满则丢弃） */
  800277e:	4b0c      	ldr	r3, [pc, #48]	@ (80027b0 <HAL_FDCAN_RxFifo0Callback+0x78>)
  8002780:	6818      	ldr	r0, [r3, #0]
  8002782:	f107 0108 	add.w	r1, r7, #8
  8002786:	2300      	movs	r3, #0
  8002788:	2200      	movs	r2, #0
  800278a:	f010 f951 	bl	8012a30 <osMessageQueuePut>
-  while (HAL_FDCAN_GetRxFifoFillLevel(hfdcan, FDCAN_RX_FIFO0) > 0U)
+  while (HAL_FDCAN_GetRxFifoFillLevel(hfdcan, FDCAN_RX_FIFO0) > 0U) /* 循环读取 FIFO0 中所有待处理消息 */
  800278e:	2140      	movs	r1, #64	@ 0x40
  8002790:	6878      	ldr	r0, [r7, #4]
  8002792:	f007 f950 	bl	8009a36 <HAL_FDCAN_GetRxFifoFillLevel>
@@ -5389,10 +5389,10 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
  8002798:	2b00      	cmp	r3, #0
  800279a:	d1e4      	bne.n	8002766 <HAL_FDCAN_RxFifo0Callback+0x2e>
  800279c:	e002      	b.n	80027a4 <HAL_FDCAN_RxFifo0Callback+0x6c>
-    return;
+    return;  /* 不满足条件 → 直接返回，不处理 */
  800279e:	bf00      	nop
  80027a0:	e000      	b.n	80027a4 <HAL_FDCAN_RxFifo0Callback+0x6c>
-      break;
+      break;  /* 读取失败 → 退出循环（防止死循环） */
  80027a2:	bf00      	nop
   }
 }
@@ -5408,18 +5408,18 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
  * @retval      无
  * @note        发布成功后ping计数自增；发布失败时累加micro-ROS发布失败计数。
  */
-static void ping_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
+static void ping_timer_callback(rcl_timer_t *timer, int64_t last_call_time) /* 200ms 周期心跳发布回调 */
 {
  80027b4:	b580      	push	{r7, lr}
  80027b6:	b084      	sub	sp, #16
  80027b8:	af00      	add	r7, sp, #0
  80027ba:	60f8      	str	r0, [r7, #12]
  80027bc:	e9c7 2300 	strd	r2, r3, [r7]
-  (void)timer;
-  (void)last_call_time;
+  (void)timer;          /* 消除"未使用参数"编译器警告 */
+  (void)last_call_time; /* 消除"未使用参数"编译器警告 */
 
   /* /stm32_ping使用递增Int32，方便上位机确认链路持续工作。 */
-  if (rcl_publish(&g_ping_publisher, &g_ping_msg, NULL) == RCL_RET_OK)
+  if (rcl_publish(&g_ping_publisher, &g_ping_msg, NULL) == RCL_RET_OK) /* 发布 Int32 心跳消息（无超时） */
  80027c0:	2200      	movs	r2, #0
  80027c2:	490d      	ldr	r1, [pc, #52]	@ (80027f8 <ping_timer_callback+0x44>)
  80027c4:	480d      	ldr	r0, [pc, #52]	@ (80027fc <ping_timer_callback+0x48>)
@@ -5428,30 +5428,30 @@ static void ping_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  80027cc:	2b00      	cmp	r3, #0
  80027ce:	d108      	bne.n	80027e2 <ping_timer_callback+0x2e>
   {
-    g_ping_msg.data++;
+    g_ping_msg.data++;                   /* 发布成功 → 心跳计数器自增 1 */
  80027d0:	4b09      	ldr	r3, [pc, #36]	@ (80027f8 <ping_timer_callback+0x44>)
  80027d2:	681b      	ldr	r3, [r3, #0]
  80027d4:	3301      	adds	r3, #1
  80027d6:	4a08      	ldr	r2, [pc, #32]	@ (80027f8 <ping_timer_callback+0x44>)
  80027d8:	6013      	str	r3, [r2, #0]
-    g_microros_publish_fail_count = 0U;
+    g_microros_publish_fail_count = 0U;  /* 发布成功 → 失败计数归零（链路恢复） */
  80027da:	4b09      	ldr	r3, [pc, #36]	@ (8002800 <ping_timer_callback+0x4c>)
  80027dc:	2200      	movs	r2, #0
  80027de:	601a      	str	r2, [r3, #0]
   else
   {
-    g_microros_publish_fail_count++;
-    rcl_reset_error();
+    g_microros_publish_fail_count++;     /* 发布失败 → 累加失败计数（用于诊断） */
+    rcl_reset_error();                   /* 清除 rcl 错误状态 */
   }
 }
  80027e0:	e006      	b.n	80027f0 <ping_timer_callback+0x3c>
-    g_microros_publish_fail_count++;
+    g_microros_publish_fail_count++;     /* 发布失败 → 累加失败计数（用于诊断） */
  80027e2:	4b07      	ldr	r3, [pc, #28]	@ (8002800 <ping_timer_callback+0x4c>)
  80027e4:	681b      	ldr	r3, [r3, #0]
  80027e6:	3301      	adds	r3, #1
  80027e8:	4a05      	ldr	r2, [pc, #20]	@ (8002800 <ping_timer_callback+0x4c>)
  80027ea:	6013      	str	r3, [r2, #0]
-    rcl_reset_error();
+    rcl_reset_error();                   /* 清除 rcl 错误状态 */
  80027ec:	f016 fd10 	bl	8019210 <rcutils_reset_error>
 }
  80027f0:	bf00      	nop
@@ -5468,7 +5468,7 @@ static void ping_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  * @note        将实际线速度和横摆角速度积分得到位姿 (x, y, θ)，
  *              按标准 Odometry 消息格式发布，供 Nav2 导航栈使用。
  */
-static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
+static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time) /* 5Hz 里程计发布回调 */
 {
  8002808:	b590      	push	{r4, r7, lr}
  800280a:	ed2d 8b02 	vpush	{d8}
@@ -5476,36 +5476,36 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  8002810:	af00      	add	r7, sp, #0
  8002812:	60f8      	str	r0, [r7, #12]
  8002814:	e9c7 2300 	strd	r2, r3, [r7]
-  float vx = g_drive_motor_actual_speed_mps;
+  float vx = g_drive_motor_actual_speed_mps;  /* 当前实际线速度 (m/s) */
  8002818:	4ba3      	ldr	r3, [pc, #652]	@ (8002aa8 <odom_timer_callback+0x2a0>)
  800281a:	681b      	ldr	r3, [r3, #0]
  800281c:	62bb      	str	r3, [r7, #40]	@ 0x28
-  float vtheta = g_chassis_actual_angular_z;
+  float vtheta = g_chassis_actual_angular_z;  /* 当前实际横摆角速度 (rad/s) */
  800281e:	4ba3      	ldr	r3, [pc, #652]	@ (8002aac <odom_timer_callback+0x2a4>)
  8002820:	681b      	ldr	r3, [r3, #0]
  8002822:	627b      	str	r3, [r7, #36]	@ 0x24
-  uint32_t now = osKernelGetTickCount();
+  uint32_t now = osKernelGetTickCount();      /* 当前系统 tick 计数 */
  8002824:	f00f ffca 	bl	80127bc <osKernelGetTickCount>
  8002828:	6238      	str	r0, [r7, #32]
 
-  (void)timer;
-  (void)last_call_time;
+  (void)timer;          /* 消除"未使用参数"编译器警告 */
+  (void)last_call_time; /* 消除"未使用参数"编译器警告 */
 
   /* 计算时间步长 (秒)。 */
-  if (g_odom_last_tick == 0U)
+  if (g_odom_last_tick == 0U) /* 首次调用，没有上一次时间戳 */
  800282a:	4ba1      	ldr	r3, [pc, #644]	@ (8002ab0 <odom_timer_callback+0x2a8>)
  800282c:	681b      	ldr	r3, [r3, #0]
  800282e:	2b00      	cmp	r3, #0
  8002830:	d102      	bne.n	8002838 <odom_timer_callback+0x30>
   {
-    dt = 0.02f;  /* 首次按 20ms 估算。 */
+    dt = 0.02f;  /* 首次按 20ms 估算（200ms 周期的保守值，避免 dt=0 导致积分不发散） */
  8002832:	4ba0      	ldr	r3, [pc, #640]	@ (8002ab4 <odom_timer_callback+0x2ac>)
  8002834:	62fb      	str	r3, [r7, #44]	@ 0x2c
  8002836:	e015      	b.n	8002864 <odom_timer_callback+0x5c>
   }
   else
   {
-    dt = (float)(now - g_odom_last_tick) * (1.0f / (float)osKernelGetTickFreq());
+    dt = (float)(now - g_odom_last_tick) * (1.0f / (float)osKernelGetTickFreq()); /* 实际时间差 (tick) ÷ tick 频率 = 秒 */
  8002838:	4b9d      	ldr	r3, [pc, #628]	@ (8002ab0 <odom_timer_callback+0x2a8>)
  800283a:	681b      	ldr	r3, [r3, #0]
  800283c:	6a3a      	ldr	r2, [r7, #32]
@@ -5520,13 +5520,13 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  800285c:	ee68 7a27 	vmul.f32	s15, s16, s15
  8002860:	edc7 7a0b 	vstr	s15, [r7, #44]	@ 0x2c
   }
-  g_odom_last_tick = now;
+  g_odom_last_tick = now; /* 保存当前 tick 供下次计算 dt */
  8002864:	4a92      	ldr	r2, [pc, #584]	@ (8002ab0 <odom_timer_callback+0x2a8>)
  8002866:	6a3b      	ldr	r3, [r7, #32]
  8002868:	6013      	str	r3, [r2, #0]
 
   /* 航迹推算: 中值法积分。 */
-  g_odom_pose_x += vx * cosf(g_odom_pose_theta + 0.5f * vtheta * dt) * dt;
+  g_odom_pose_x += vx * cosf(g_odom_pose_theta + 0.5f * vtheta * dt) * dt;  /* X 方向积分：v·cos(θ+½ωdt)·dt */
  800286a:	edd7 7a09 	vldr	s15, [r7, #36]	@ 0x24
  800286e:	eeb6 7a00 	vmov.f32	s14, #96	@ 0x3f000000  0.5
  8002872:	ee27 7a87 	vmul.f32	s14, s15, s14
@@ -5547,7 +5547,7 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  80028aa:	ee77 7a27 	vadd.f32	s15, s14, s15
  80028ae:	4b83      	ldr	r3, [pc, #524]	@ (8002abc <odom_timer_callback+0x2b4>)
  80028b0:	edc3 7a00 	vstr	s15, [r3]
-  g_odom_pose_y += vx * sinf(g_odom_pose_theta + 0.5f * vtheta * dt) * dt;
+  g_odom_pose_y += vx * sinf(g_odom_pose_theta + 0.5f * vtheta * dt) * dt;  /* Y 方向积分：v·sin(θ+½ωdt)·dt */
  80028b4:	edd7 7a09 	vldr	s15, [r7, #36]	@ 0x24
  80028b8:	eeb6 7a00 	vmov.f32	s14, #96	@ 0x3f000000  0.5
  80028bc:	ee27 7a87 	vmul.f32	s14, s15, s14
@@ -5568,7 +5568,7 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  80028f4:	ee77 7a27 	vadd.f32	s15, s14, s15
  80028f8:	4b71      	ldr	r3, [pc, #452]	@ (8002ac0 <odom_timer_callback+0x2b8>)
  80028fa:	edc3 7a00 	vstr	s15, [r3]
-  g_odom_pose_theta += vtheta * dt;
+  g_odom_pose_theta += vtheta * dt;                                          /* 航向角积分：ω·dt */
  80028fe:	ed97 7a09 	vldr	s14, [r7, #36]	@ 0x24
  8002902:	edd7 7a0b 	vldr	s15, [r7, #44]	@ 0x2c
  8002906:	ee27 7a27 	vmul.f32	s14, s14, s15
@@ -5579,7 +5579,7 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  8002916:	edc3 7a00 	vstr	s15, [r3]
 
   /* yaw -> 四元数。 */
-  half_theta = 0.5f * g_odom_pose_theta;
+  half_theta = 0.5f * g_odom_pose_theta; /* 将航向角减半，用于四元数转换公式 */
  800291a:	4b67      	ldr	r3, [pc, #412]	@ (8002ab8 <odom_timer_callback+0x2b0>)
  800291c:	edd3 7a00 	vldr	s15, [r3]
  8002920:	eeb6 7a00 	vmov.f32	s14, #96	@ 0x3f000000  0.5
@@ -5587,16 +5587,16 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  8002928:	edc7 7a07 	vstr	s15, [r7, #28]
 
   /* 填充标准 Odometry 消息：优先使用 Agent 同步后的ROS时间。 */
-  if (rmw_uros_epoch_synchronized())
+  if (rmw_uros_epoch_synchronized()) /* 检查是否已与 Agent 时间同步 */
  800292c:	f016 fea2 	bl	8019674 <rmw_uros_epoch_synchronized>
  8002930:	4603      	mov	r3, r0
  8002932:	2b00      	cmp	r3, #0
  8002934:	d018      	beq.n	8002968 <odom_timer_callback+0x160>
   {
-    int64_t time_ns = rmw_uros_epoch_nanos();
+    int64_t time_ns = rmw_uros_epoch_nanos();                              /* 获取 Agent 同步后的 ROS 时间 (ns) */
  8002936:	f016 fea7 	bl	8019688 <rmw_uros_epoch_nanos>
  800293a:	e9c7 0104 	strd	r0, r1, [r7, #16]
-    g_odom_msg.header.stamp.sec = (int32_t)(time_ns / 1000000000LL);
+    g_odom_msg.header.stamp.sec = (int32_t)(time_ns / 1000000000LL);       /* 秒部分 = 总纳秒 ÷ 10^9 */
  800293e:	e9d7 0104 	ldrd	r0, r1, [r7, #16]
  8002942:	a357      	add	r3, pc, #348	@ (adr r3, 8002aa0 <odom_timer_callback+0x298>)
  8002944:	e9d3 2300 	ldrd	r2, r3, [r3]
@@ -5605,7 +5605,7 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  800294e:	460b      	mov	r3, r1
  8002950:	4b5c      	ldr	r3, [pc, #368]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  8002952:	601a      	str	r2, [r3, #0]
-    g_odom_msg.header.stamp.nanosec = (uint32_t)(time_ns % 1000000000LL);
+    g_odom_msg.header.stamp.nanosec = (uint32_t)(time_ns % 1000000000LL);  /* 纳秒部分 = 总纳秒 mod 10^9 */
  8002954:	e9d7 0104 	ldrd	r0, r1, [r7, #16]
  8002958:	a351      	add	r3, pc, #324	@ (adr r3, 8002aa0 <odom_timer_callback+0x298>)
  800295a:	e9d3 2300 	ldrd	r2, r3, [r3]
@@ -5616,10 +5616,10 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
   }
   else
   {
-    uint32_t tick = osKernelGetTickCount();
+    uint32_t tick = osKernelGetTickCount();                                /* 未同步时使用 FreeRTOS tick 作为后备 */
  8002968:	f00f ff28 	bl	80127bc <osKernelGetTickCount>
  800296c:	61b8      	str	r0, [r7, #24]
-    g_odom_msg.header.stamp.sec = (int32_t)(tick / osKernelGetTickFreq());
+    g_odom_msg.header.stamp.sec = (int32_t)(tick / osKernelGetTickFreq()); /* 秒部分 = tick ÷ 频率 */
  800296e:	f00f ff39 	bl	80127e4 <osKernelGetTickFreq>
  8002972:	4602      	mov	r2, r0
  8002974:	69bb      	ldr	r3, [r7, #24]
@@ -5627,7 +5627,7 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  800297a:	461a      	mov	r2, r3
  800297c:	4b51      	ldr	r3, [pc, #324]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  800297e:	601a      	str	r2, [r3, #0]
-    g_odom_msg.header.stamp.nanosec = (uint32_t)((tick % osKernelGetTickFreq()) * (1000000000U / osKernelGetTickFreq()));
+    g_odom_msg.header.stamp.nanosec = (uint32_t)((tick % osKernelGetTickFreq()) * (1000000000U / osKernelGetTickFreq())); /* 纳秒部分 = (tick 余数) × (10^9 / 频率) */
  8002980:	f00f ff30 	bl	80127e4 <osKernelGetTickFreq>
  8002984:	4602      	mov	r2, r0
  8002986:	69bb      	ldr	r3, [r7, #24]
@@ -5642,79 +5642,79 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  80029a2:	4a48      	ldr	r2, [pc, #288]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  80029a4:	6053      	str	r3, [r2, #4]
   }
-  g_odom_msg.pose.pose.position.x = (double)g_odom_pose_x;
+  g_odom_msg.pose.pose.position.x = (double)g_odom_pose_x;    /* 位姿 X 坐标（double 类型，ROS 标准） */
  80029a6:	4b45      	ldr	r3, [pc, #276]	@ (8002abc <odom_timer_callback+0x2b4>)
  80029a8:	edd3 7a00 	vldr	s15, [r3]
  80029ac:	eeb7 7ae7 	vcvt.f64.f32	d7, s15
  80029b0:	4b44      	ldr	r3, [pc, #272]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  80029b2:	ed83 7b08 	vstr	d7, [r3, #32]
-  g_odom_msg.pose.pose.position.y = (double)g_odom_pose_y;
+  g_odom_msg.pose.pose.position.y = (double)g_odom_pose_y;    /* 位姿 Y 坐标 */
  80029b6:	4b42      	ldr	r3, [pc, #264]	@ (8002ac0 <odom_timer_callback+0x2b8>)
  80029b8:	edd3 7a00 	vldr	s15, [r3]
  80029bc:	eeb7 7ae7 	vcvt.f64.f32	d7, s15
  80029c0:	4b40      	ldr	r3, [pc, #256]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  80029c2:	ed83 7b0a 	vstr	d7, [r3, #40]	@ 0x28
-  g_odom_msg.pose.pose.position.z = 0.0;
+  g_odom_msg.pose.pose.position.z = 0.0;                      /* 位姿 Z 坐标 = 0（平面运动） */
  80029c6:	493f      	ldr	r1, [pc, #252]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  80029c8:	f04f 0200 	mov.w	r2, #0
  80029cc:	f04f 0300 	mov.w	r3, #0
  80029d0:	e9c1 230c 	strd	r2, r3, [r1, #48]	@ 0x30
-  g_odom_msg.pose.pose.orientation.x = 0.0;
+  g_odom_msg.pose.pose.orientation.x = 0.0;                   /* 四元数 x = 0（绕 Z 轴旋转，无 X/Y 分量） */
  80029d4:	493b      	ldr	r1, [pc, #236]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  80029d6:	f04f 0200 	mov.w	r2, #0
  80029da:	f04f 0300 	mov.w	r3, #0
  80029de:	e9c1 230e 	strd	r2, r3, [r1, #56]	@ 0x38
-  g_odom_msg.pose.pose.orientation.y = 0.0;
+  g_odom_msg.pose.pose.orientation.y = 0.0;                   /* 四元数 y = 0 */
  80029e2:	4938      	ldr	r1, [pc, #224]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  80029e4:	f04f 0200 	mov.w	r2, #0
  80029e8:	f04f 0300 	mov.w	r3, #0
  80029ec:	e9c1 2310 	strd	r2, r3, [r1, #64]	@ 0x40
-  g_odom_msg.pose.pose.orientation.z = (double)sinf(half_theta);
+  g_odom_msg.pose.pose.orientation.z = (double)sinf(half_theta); /* 四元数 z = sin(θ/2) */
  80029f0:	ed97 0a07 	vldr	s0, [r7, #28]
  80029f4:	f023 fcb4 	bl	8026360 <sinf>
  80029f8:	eef0 7a40 	vmov.f32	s15, s0
  80029fc:	eeb7 7ae7 	vcvt.f64.f32	d7, s15
  8002a00:	4b30      	ldr	r3, [pc, #192]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  8002a02:	ed83 7b12 	vstr	d7, [r3, #72]	@ 0x48
-  g_odom_msg.pose.pose.orientation.w = (double)cosf(half_theta);
+  g_odom_msg.pose.pose.orientation.w = (double)cosf(half_theta); /* 四元数 w = cos(θ/2) */
  8002a06:	ed97 0a07 	vldr	s0, [r7, #28]
  8002a0a:	f023 fda1 	bl	8026550 <cosf>
  8002a0e:	eef0 7a40 	vmov.f32	s15, s0
  8002a12:	eeb7 7ae7 	vcvt.f64.f32	d7, s15
  8002a16:	4b2b      	ldr	r3, [pc, #172]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  8002a18:	ed83 7b14 	vstr	d7, [r3, #80]	@ 0x50
-  g_odom_msg.twist.twist.linear.x = (double)vx;
+  g_odom_msg.twist.twist.linear.x = (double)vx;               /* 线速度 X 分量 */
  8002a1c:	edd7 7a0a 	vldr	s15, [r7, #40]	@ 0x28
  8002a20:	eeb7 7ae7 	vcvt.f64.f32	d7, s15
  8002a24:	4b27      	ldr	r3, [pc, #156]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  8002a26:	ed83 7b5e 	vstr	d7, [r3, #376]	@ 0x178
-  g_odom_msg.twist.twist.linear.y = 0.0;
+  g_odom_msg.twist.twist.linear.y = 0.0;                      /* 线速度 Y 分量 = 0（非完整约束，无侧滑） */
  8002a2a:	4926      	ldr	r1, [pc, #152]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  8002a2c:	f04f 0200 	mov.w	r2, #0
  8002a30:	f04f 0300 	mov.w	r3, #0
  8002a34:	e9c1 2360 	strd	r2, r3, [r1, #384]	@ 0x180
-  g_odom_msg.twist.twist.linear.z = 0.0;
+  g_odom_msg.twist.twist.linear.z = 0.0;                      /* 线速度 Z 分量 = 0（平面运动） */
  8002a38:	4922      	ldr	r1, [pc, #136]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  8002a3a:	f04f 0200 	mov.w	r2, #0
  8002a3e:	f04f 0300 	mov.w	r3, #0
  8002a42:	e9c1 2362 	strd	r2, r3, [r1, #392]	@ 0x188
-  g_odom_msg.twist.twist.angular.x = 0.0;
+  g_odom_msg.twist.twist.angular.x = 0.0;                     /* 角速度 X 分量 = 0 */
  8002a46:	491f      	ldr	r1, [pc, #124]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  8002a48:	f04f 0200 	mov.w	r2, #0
  8002a4c:	f04f 0300 	mov.w	r3, #0
  8002a50:	e9c1 2364 	strd	r2, r3, [r1, #400]	@ 0x190
-  g_odom_msg.twist.twist.angular.y = 0.0;
+  g_odom_msg.twist.twist.angular.y = 0.0;                     /* 角速度 Y 分量 = 0 */
  8002a54:	491b      	ldr	r1, [pc, #108]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  8002a56:	f04f 0200 	mov.w	r2, #0
  8002a5a:	f04f 0300 	mov.w	r3, #0
  8002a5e:	e9c1 2366 	strd	r2, r3, [r1, #408]	@ 0x198
-  g_odom_msg.twist.twist.angular.z = (double)vtheta;
+  g_odom_msg.twist.twist.angular.z = (double)vtheta;          /* 角速度 Z 分量（横摆角速度） */
  8002a62:	edd7 7a09 	vldr	s15, [r7, #36]	@ 0x24
  8002a66:	eeb7 7ae7 	vcvt.f64.f32	d7, s15
  8002a6a:	4b16      	ldr	r3, [pc, #88]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  8002a6c:	ed83 7b68 	vstr	d7, [r3, #416]	@ 0x1a0
 
-  if (rcl_publish(&g_odom_publisher, &g_odom_msg, NULL) != RCL_RET_OK)
+  if (rcl_publish(&g_odom_publisher, &g_odom_msg, NULL) != RCL_RET_OK) /* 发布 /odom 消息 */
  8002a70:	2200      	movs	r2, #0
  8002a72:	4914      	ldr	r1, [pc, #80]	@ (8002ac4 <odom_timer_callback+0x2bc>)
  8002a74:	4815      	ldr	r0, [pc, #84]	@ (8002acc <odom_timer_callback+0x2c4>)
@@ -5723,13 +5723,13 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  8002a7c:	2b00      	cmp	r3, #0
  8002a7e:	d006      	beq.n	8002a8e <odom_timer_callback+0x286>
   {
-    g_microros_publish_fail_count++;
+    g_microros_publish_fail_count++;  /* 发布失败 → 累加失败计数 */
  8002a80:	4b13      	ldr	r3, [pc, #76]	@ (8002ad0 <odom_timer_callback+0x2c8>)
  8002a82:	681b      	ldr	r3, [r3, #0]
  8002a84:	3301      	adds	r3, #1
  8002a86:	4a12      	ldr	r2, [pc, #72]	@ (8002ad0 <odom_timer_callback+0x2c8>)
  8002a88:	6013      	str	r3, [r2, #0]
-    rcl_reset_error();
+    rcl_reset_error();                /* 清除错误状态 */
  8002a8a:	f016 fbc1 	bl	8019210 <rcutils_reset_error>
   }
 }
@@ -5759,40 +5759,40 @@ static void odom_timer_callback(rcl_timer_t *timer, int64_t last_call_time)
  * @retval      无
  * @note        只使用linear.x和angular.z；收到消息时更新接收时间戳和计数，供控制任务做超时保护。
  */
-static void cmd_vel_callback(const void *msgin)
+static void cmd_vel_callback(const void *msgin) /* /cmd_vel 订阅回调：由 executor 在新数据到达时调用 */
 {
  8002ad4:	b580      	push	{r7, lr}
  8002ad6:	b084      	sub	sp, #16
  8002ad8:	af00      	add	r7, sp, #0
  8002ada:	6078      	str	r0, [r7, #4]
-  const geometry_msgs__msg__Twist *cmd_vel = (const geometry_msgs__msg__Twist *)msgin;
+  const geometry_msgs__msg__Twist *cmd_vel = (const geometry_msgs__msg__Twist *)msgin; /* 将 void* 强制转换为 Twist 指针 */
  8002adc:	687b      	ldr	r3, [r7, #4]
  8002ade:	60fb      	str	r3, [r7, #12]
 
   /* rclc executor收到新/cmd_vel后调用本函数，控制任务随后读取这些全局命令。 */
-  if (cmd_vel != NULL)
+  if (cmd_vel != NULL)  /* 空指针保护 */
  8002ae0:	68fb      	ldr	r3, [r7, #12]
  8002ae2:	2b00      	cmp	r3, #0
  8002ae4:	d019      	beq.n	8002b1a <cmd_vel_callback+0x46>
   {
-    g_chassis_cmd_linear_x = (float)cmd_vel->linear.x;
+    g_chassis_cmd_linear_x = (float)cmd_vel->linear.x;   /* 提取线速度 X (m/s)，转为 float 存入全局变量 */
  8002ae6:	68fb      	ldr	r3, [r7, #12]
  8002ae8:	ed93 7b00 	vldr	d7, [r3]
  8002aec:	eef7 7bc7 	vcvt.f32.f64	s15, d7
  8002af0:	4b0c      	ldr	r3, [pc, #48]	@ (8002b24 <cmd_vel_callback+0x50>)
  8002af2:	edc3 7a00 	vstr	s15, [r3]
-    g_chassis_cmd_angular_z = (float)cmd_vel->angular.z;
+    g_chassis_cmd_angular_z = (float)cmd_vel->angular.z;  /* 提取角速度 Z (rad/s)，转为 float 存入全局变量 */
  8002af6:	68fb      	ldr	r3, [r7, #12]
  8002af8:	ed93 7b0a 	vldr	d7, [r3, #40]	@ 0x28
  8002afc:	eef7 7bc7 	vcvt.f32.f64	s15, d7
  8002b00:	4b09      	ldr	r3, [pc, #36]	@ (8002b28 <cmd_vel_callback+0x54>)
  8002b02:	edc3 7a00 	vstr	s15, [r3]
-    g_chassis_cmd_last_tick = osKernelGetTickCount();
+    g_chassis_cmd_last_tick = osKernelGetTickCount();      /* 记录接收时间戳（供 controlTask 超时检测） */
  8002b06:	f00f fe59 	bl	80127bc <osKernelGetTickCount>
  8002b0a:	4603      	mov	r3, r0
  8002b0c:	4a07      	ldr	r2, [pc, #28]	@ (8002b2c <cmd_vel_callback+0x58>)
  8002b0e:	6013      	str	r3, [r2, #0]
-    g_chassis_cmd_rx_count++;
+    g_chassis_cmd_rx_count++;                              /* 累加接收计数（诊断用） */
  8002b10:	4b07      	ldr	r3, [pc, #28]	@ (8002b30 <cmd_vel_callback+0x5c>)
  8002b12:	681b      	ldr	r3, [r3, #0]
  8002b14:	3301      	adds	r3, #1
@@ -84740,70 +84740,4 @@ size_t cubemx_transport_read(struct uxrCustomTransport* transport, uint8_t* buf,
  802727c:	ee27 0a80 	vmul.f32	s0, s15, s0
  8027280:	4770      	bx	lr
  8027282:	eddf 7a11 	vldr	s15, [pc, #68]	@ 80272c8 <scalbnf+0xd4>
- 8027286:	ee07 3a10 	vmov	s14, r3
- 802728a:	ee27 0a27 	vmul.f32	s0, s14, s15
- 802728e:	4770      	bx	lr
- 8027290:	f022 42ff 	bic.w	r2, r2, #2139095040	@ 0x7f800000
- 8027294:	ea42 53c1 	orr.w	r3, r2, r1, lsl #23
- 8027298:	ee00 3a10 	vmov	s0, r3
- 802729c:	4770      	bx	lr
- 802729e:	2b00      	cmp	r3, #0
- 80272a0:	eddf 7a09 	vldr	s15, [pc, #36]	@ 80272c8 <scalbnf+0xd4>
- 80272a4:	ed9f 0a08 	vldr	s0, [pc, #32]	@ 80272c8 <scalbnf+0xd4>
- 80272a8:	bfb8      	it	lt
- 80272aa:	eddf 7a08 	vldrlt	s15, [pc, #32]	@ 80272cc <scalbnf+0xd8>
- 80272ae:	ee27 0a80 	vmul.f32	s0, s15, s0
- 80272b2:	4770      	bx	lr
- 80272b4:	4c000000 	.word	0x4c000000
- 80272b8:	ffff3cb0 	.word	0xffff3cb0
- 80272bc:	7149f2ca 	.word	0x7149f2ca
- 80272c0:	f149f2ca 	.word	0xf149f2ca
- 80272c4:	33000000 	.word	0x33000000
- 80272c8:	0da24260 	.word	0x0da24260
- 80272cc:	8da24260 	.word	0x8da24260
-
-080272d0 <floorf>:
- 80272d0:	ee10 2a10 	vmov	r2, s0
- 80272d4:	f3c2 53c7 	ubfx	r3, r2, #23, #8
- 80272d8:	3b7f      	subs	r3, #127	@ 0x7f
- 80272da:	2b16      	cmp	r3, #22
- 80272dc:	f022 4100 	bic.w	r1, r2, #2147483648	@ 0x80000000
- 80272e0:	dc1b      	bgt.n	802731a <floorf+0x4a>
- 80272e2:	2b00      	cmp	r3, #0
- 80272e4:	4610      	mov	r0, r2
- 80272e6:	db1e      	blt.n	8027326 <floorf+0x56>
- 80272e8:	491a      	ldr	r1, [pc, #104]	@ (8027354 <floorf+0x84>)
- 80272ea:	4119      	asrs	r1, r3
- 80272ec:	420a      	tst	r2, r1
- 80272ee:	d023      	beq.n	8027338 <floorf+0x68>
- 80272f0:	eddf 7a19 	vldr	s15, [pc, #100]	@ 8027358 <floorf+0x88>
- 80272f4:	ee70 7a27 	vadd.f32	s15, s0, s15
- 80272f8:	eef5 7ac0 	vcmpe.f32	s15, #0.0
- 80272fc:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
- 8027300:	dd1a      	ble.n	8027338 <floorf+0x68>
- 8027302:	2a00      	cmp	r2, #0
- 8027304:	da04      	bge.n	8027310 <floorf+0x40>
- 8027306:	f44f 0200 	mov.w	r2, #8388608	@ 0x800000
- 802730a:	fa42 f303 	asr.w	r3, r2, r3
- 802730e:	4418      	add	r0, r3
- 8027310:	ea20 0301 	bic.w	r3, r0, r1
- 8027314:	ee00 3a10 	vmov	s0, r3
- 8027318:	4770      	bx	lr
- 802731a:	f1b1 4fff 	cmp.w	r1, #2139095040	@ 0x7f800000
- 802731e:	d30b      	bcc.n	8027338 <floorf+0x68>
- 8027320:	ee30 0a00 	vadd.f32	s0, s0, s0
- 8027324:	4770      	bx	lr
- 8027326:	eddf 7a0c 	vldr	s15, [pc, #48]	@ 8027358 <floorf+0x88>
- 802732a:	ee70 7a27 	vadd.f32	s15, s0, s15
- 802732e:	eef5 7ac0 	vcmpe.f32	s15, #0.0
- 8027332:	eef1 fa10 	vmrs	APSR_nzcv, fpscr
- 8027336:	dc00      	bgt.n	802733a <floorf+0x6a>
- 8027338:	4770      	bx	lr
- 802733a:	2a00      	cmp	r2, #0
- 802733c:	db02      	blt.n	8027344 <floorf+0x74>
- 802733e:	ed9f 0a07 	vldr	s0, [pc, #28]	@ 802735c <floorf+0x8c>
- 8027342:	4770      	bx	lr
- 8027344:	b911      	cbnz	r1, 802734c <floorf+0x7c>
- 8027346:	ed9f 0a06 	vldr	s0, [pc, #24]	@ 8027360 <floorf+0x90>
- 802734a:	4770      	bx	lr
- 802734c:	eebf 0a00 	vmov.f32	s0, #2
+ 8027286:	ee07 3a10 	vmov

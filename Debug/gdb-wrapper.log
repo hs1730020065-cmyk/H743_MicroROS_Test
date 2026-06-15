@@ -11,3 +11,6 @@
 鍛ㄤ簩 2026/06/02 13:11:48.21 -q -x .\tools\reset_run.gdb
 鍛ㄤ簩 2026/06/02 13:11:52.79 -q -x .\tools\check_boot.gdb
 鍛ㄤ簩 2026/06/02 13:12:23.54 -q -x .\tools\run_flash_app.gdb
+2026/06/15/周一  8:47:42.15 --version
+2026/06/15/周一  8:47:42.43 --interpreter mi2 --nx
+2026/06/15/周一  8:47:44.34 --interpreter mi2 --nx
